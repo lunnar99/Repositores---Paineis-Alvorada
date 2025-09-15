@@ -1,0 +1,738 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: poppins, sans-serif;
+}
+
+body {
+    background: #d5e3da;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+}
+
+header h1 {
+    color: #6b8c74;
+    font-size: 24px;
+}
+
+/* Formulário */
+.form-section {
+    background: #f1f8f4;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.form-section h2 {
+    margin-bottom: 10px;
+    color: #6b8c74;
+}
+
+form {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+
+form input,
+form button {
+    border: 1px solid #6b8c74;
+    border-radius: 8px;
+    padding: 10px;
+    height: 50px;
+}
+/* Custom nicer file button (keeps native input for compatibility) */
+input[type="file"] {
+    border: 1px dashed #6b8c74;
+    padding: 7px;
+    border-radius: 10px;
+    background: #f7faf8;
+}
+input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    border: 1px solid #6b8c74;
+    background: #6b8c74;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: filter .2s ease, background-color .2s ease;
+}
+input[type="file"]::file-selector-button:hover { filter: brightness(0.95); }
+input[type="file"]:focus-visible { outline: 3px solid rgba(107,140,116,.35); outline-offset: 2px; }
+
+.file-info{ display:block; margin-top:6px; color:#344b3b; font-size:12px; opacity:.85; }
+
+form button {
+    background: #6b8c74;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+form button:hover {
+    background: #56735d;
+}
+
+#tagForm button,
+.btn-filter {
+    margin-top: 12px;
+    width: 100%;
+    height: 58px;
+    padding: 0 10px;
+    font-size: 13px;
+    line-height: 28px;
+
+}
+
+#openFilters {
+    background: #566473;
+}
+
+#openFilters:hover {
+    background: #406085;
+}
+
+/* Date Range Picker - leve e embutido */
+.drp {
+    position: absolute; /* overlaid, not pushing layout */
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+    width: 280px;
+    z-index: 10000;
+}
+
+.drp header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.drp .controls button {
+    background: #eee;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.drp .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.drp .dow {
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+    opacity: .7;
+}
+
+.drp .day {
+    font-size: 13px;
+    text-align: center;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.drp .day.muted {
+    opacity: .35;
+    cursor: default;
+}
+
+.drp .day.selected {
+    background: #2e86de;
+    color: #fff;
+}
+
+.drp .day.in-range {
+    background: #d0e6ff;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.close {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.filter-section {
+    margin-bottom: 20px;
+}
+
+.stores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stores-grid label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+.btn-apply {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-apply:hover {
+    background: #218838;
+}
+
+/* Loading overlay (bloqueia cliques) */
+.loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        display: none; /* shown via JS */
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+        backdrop-filter: blur(1px);
+}
+
+/* Loader circular em verde do projeto */
+.loader {
+    width: 56px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(farthest-side, #27ae60 94%, #0000) top/10px 10px no-repeat,
+        conic-gradient(#0000 30%, #27ae60);
+        mask: radial-gradient(farthest-side, #0000 calc(100% - 10px), #000 0);
+        -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 10px), #000 0);
+    animation: l13 1s infinite linear;
+}
+@keyframes l13{
+    100%{ transform: rotate(1turn) }
+}
+
+/* Session badge (user + role + logout) */
+.session-badge {
+    position: fixed;
+    right: 12px;
+    top: 12px;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 9999;
+    font-size: 12px;
+    backdrop-filter: saturate(150%) blur(2px);
+}
+.session-badge .id { font-weight: 600; }
+.session-badge .sep { opacity: .7; }
+.session-badge .flag {
+    background: #2d6a4f;
+    color: #e9f5ef;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+.session-badge .logout-btn {
+    margin-left: 4px;
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 11px;
+}
+.session-badge .logout-btn:hover {
+    background: #b02a37;
+}
+
+
+/* Grid Tags */
+.tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px; /* espaço entre os cards */
+    padding: 20px; /* espaço entre os cards e a borda do container */
+}
+
+.tags-grid .tag {
+    border: 2px solid #27ae60;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center; 
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    /* espaço interno entre elementos do card */
+    /* Removido width fixo */
+}
+
+.tag {
+    border: 3px solid;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fff;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tag img {
+    width: 100%;
+    border-radius: 6px;
+}
+
+.tag .price {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.form-group p {
+    font-size: 12px;
+    text-align: center;
+    margin: 10px;
+}
+
+.form-group textarea {
+    resize: vertical;
+    padding: 14px 0 34px 0;
+    border: 1px solid #6b8c74;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.form-group #comment {
+    height: 42%;
+}
+
+
+.tags-grid .tag {
+    position: relative;
+    border: 2px solid #27ae60;
+    padding: 8px;
+    border-radius: 8px;
+    /* width removed to prevent overflow; cards fill their grid column */
+    text-align: center;
+}
+
+.tags-grid .tag .comment-bubble {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #f39c12;
+    animation: blink 1s infinite;
+    cursor: pointer;
+}
+
+.comment-bubble {
+    width: 22px;
+    height: 22px;
+    background-color: #f39c12;
+    border-radius: 50%;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    cursor: pointer;
+}
+
+.comment-text {
+    display: none;
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 6px;
+    border-radius: 4px;
+    width: 150px;
+    font-size: 12px;
+    z-index: 10;
+}
+
+.tag {
+    position: relative;
+}
+
+.comment-bubble:hover+.comment-text {
+    display: block;
+}
+
+
+
+.actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.select-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap; /* allow wrapping to avoid overflow */
+}
+
+.select-section input[type="checkbox"] {
+    transform: scale(1.4);
+    cursor: pointer;
+}
+
+.select-section button {
+    padding: 8px 12px;
+    font-size: 14px;
+    background: #aa6969;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    height: 40px; /* uniform height */
+    line-height: 24px;
+}
+
+/* Improve Select All control look */
+input#selectAll + label[for="selectAll"] {
+    padding: 6px 10px;
+    border: 1px solid #6b8c74;
+    border-radius: 8px;
+    background: #f8fbf9;
+    color: #344b3b;
+    user-select: none;
+    cursor: pointer;
+}
+input#selectAll:checked + label[for="selectAll"] {
+    background: #e3efe7;
+    border-color: #27ae60;
+    color: #205b38;
+}
+input#selectAll:focus + label[for="selectAll"],
+input#selectAll:focus-visible + label[for="selectAll"] {
+    outline: 2px solid #27ae60;
+    outline-offset: 2px;
+}
+
+/* Search input sizing and responsiveness */
+#tagsQuickSearch {
+    flex: 1 1 280px;
+    width: 100%;
+    max-width: 420px;
+    min-width: 0; /* allow shrinking in flex */
+    box-sizing: border-box;
+    margin-left: 0 !important; /* override inline margin on small screens */
+    height: 40px;
+}
+
+/* Make filter button match delete button size/shape */
+#openFilters-tags {
+    height: 40px;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.tag input[type="checkbox"] {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    transform: scale(2);
+    cursor: pointer;
+}
+
+.tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    /* desktop/médio */
+    gap: 24px;
+    padding: 20px;
+}
+
+
+/* ====== DESKTOP GRANDE (>= 1200px) ====== */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 80%;
+    }
+
+    .tags-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 28px;
+    }
+}
+
+/* ====== DESKTOP MÉDIO (992px até 1199px) ====== */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .container {
+        padding: 20px;
+    }
+
+    form {
+        flex-wrap: nowrap;
+        flex-direction: row;
+        gap: 15px;
+    }
+
+    .tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 30px;
+    }
+}
+
+/* ====== TABLETS (768px até 991px) ====== */
+@media (min-width: 768px) and (max-width: 991px) {
+    form {
+        flex-direction: column;
+    }
+
+    #tagForm button,
+    .btn-filter {
+        width: 100%;
+        font-size: 14px;
+        height: 50px;
+    }
+
+    .tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 26px;
+        margin: 0 50px 0 0;
+    }
+
+    .modal-content {
+        width: 90%;
+    }
+
+    .drop-image {
+        display: none;
+    }
+
+
+    /* Modal */
+    .modal,
+    .popup {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content,
+    .popup-content {
+        background: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .close,
+    .close-popup {
+        float: right;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .stores-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+}
+
+/* ====== CELULARES GRANDES (576px até 767px) ====== */
+@media (min-width: 576px) and (max-width: 767px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 15px;
+    }
+
+    form {
+        flex-direction: column;
+    }
+
+    .tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 15px;
+    }
+
+    .modal-content {
+        width: 95%;
+    }
+
+    .select-section {
+        flex-direction: row;
+        align-items: center;
+        margin-left: 0; /* prevent horizontal overflow */
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    #tagsQuickSearch {
+        flex-basis: 100%;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .select-section button,
+    #openFilters-tags {
+        flex: 1 1 calc(50% - 8px);
+    }
+
+    .drop-image {
+        display: none;
+    }
+}
+
+/* ====== CELULARES PEQUENOS (< 576px) ====== */
+@media (max-width: 575px) {
+    
+    header h1 {
+        font-size: 18px;
+    }
+
+    .form-section h2 {
+        font-size: 16px;
+    }
+
+    form {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #tagForm button,
+    .btn-filter {
+        height: 45px;
+        font-size: 12px;
+    }
+
+    .tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        /* permite 2 ou mais cards lado a lado */
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .tags-grid .tag {
+        max-width: 100%;
+        /* ocupa o espaço da coluna */
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .drop-image {
+        display: none;
+    }
+
+    .select-section {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: 0;
+    }
+
+    #tagsQuickSearch {
+        flex-basis: 100%;
+        max-width: 100%;
+        width: 100%;
+        margin-left: 0 !important; /* ensure no push to the right */
+    }
+
+    .select-section button,
+    #openFilters-tags {
+        flex: 1 1 calc(50% - 8px);
+        height: 44px; /* touch-friendly */
+    }
+
+
+}

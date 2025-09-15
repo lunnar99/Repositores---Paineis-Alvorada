@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Usuário</title>
+  <link rel="stylesheet" href="main-style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon" href="/logo/LOGO USER.png" type="image/png">
+</head>
+
+<body>
+
+  <div class="container">
+    <header class="topbar">
+      <div class="searchbox">
+        <h2>Pesquisar</h2>
+        <input type="text" id="search" placeholder="Procurar por dia (ex: 7 ou 07)">
+      </div>
+      <nav class="filters">
+        <button class="filter active" data-filter="all">Todas</button>
+        <button class="filter" data-filter="valid">Adicionar na Loja</button>
+        <button class="filter" data-filter="expired">Retirar da Loja</button>
+        <button class="filter" data-filter="printed">Impressas</button>
+        <div>
+          <button id="Recentes" class="filter">Adicionadas Hoje</button>
+        </div>
+      </nav>
+      <div class="counts">
+        <p><span class="dot green"></span> Válidos: <span id="countValid">0</span></p>
+        <p><span class="dot orange"></span> Logo Vence: <span id="countSoon">0</span></p>
+        <p><span class="dot red"></span> Vencidos: <span id="countExpired">0</span></p>
+        <p><b>Totais: <span id="countTotal">0</span></b></p>
+      </div>
+    </header>
+    <!-- Barra de ações em massa (aparece quando 2+ selecionadas) -->
+    <div id="bulkActions" class="bulk-actions" hidden>
+      <div class="bulk-left">
+        <input type="checkbox" id="selectAllVisible">
+        <label for="selectAllVisible">Selecionar visíveis</label>
+        <span class="sep">|</span>
+        <span class="sel-info"><span id="selectedCount">0</span> selecionadas</span>
+      </div>
+      <div class="bulk-right">
+        <button type="button" id="bulkDownload" class="bulk-btn">
+          <i class="fa-solid fa-print"></i> Baixar Selecionadas
+        </button>
+        <button type="button" id="bulkPrint" class="bulk-btn primary">
+          <i class="fa-solid fa-print"></i> Imprimir Selecionadas
+        </button>
+      </div>
+    </div>
+    <main class="tags-grid" id="tagsGrid"></main>
+  </div>
+
+  <!-- Firebase -->
+  <script src="sweetalert-loader.js"></script>
+  <script src="jszip-loader.js"></script>
+  <!-- Loader jsPDF com fallbacks -->
+  <script src="jspdf-loader.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAjzds2ts_R2gqgN2x0p80xq20-6QSAkjY",
+      authDomain: "tags-repositores.firebaseapp.com",
+      projectId: "tags-repositores",
+      storageBucket: "tags-repositores.firebasestorage.app",
+      messagingSenderId: "452823969336",
+      appId: "1:452823969336:web:09ce09427ee49f46c880cd",
+      measurementId: "G-0BLTNKVWVZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.collection = collection;
+    window.getDocs = getDocs;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.deleteDoc = deleteDoc;
+    window.serverTimestamp = serverTimestamp;
+    window.query = query;
+    window.where = where;
+  </script>
+
+  <!-- Script do Usuário -->
+  <script type="module">
+    const role = localStorage.getItem("role");
+    const user = localStorage.getItem("user");
+
+    if (!role || role === "ADM") {
+      alert("Acesso não permitido!");
+      window.location.href = "index.html";
+    }
+
+    // Widget fixo com identificação e logout
+    function createSessionBadge() {
+      if (document.getElementById("sessionBadge")) return; // evita duplicar
+      const badge = document.createElement("div");
+      badge.id = "sessionBadge";
+      badge.className = "session-badge";
+      const userLabel = (user || "sem-usuário");
+      const roleLabel = (role || "-");
+      badge.innerHTML = `
+                  <span class="id">${userLabel}</span>
+                  <span class="sep">•</span>
+                  <span class="flag">${roleLabel}</span>
+                  <button type="button" class="logout-btn" title="Sair">Sair</button>
+                `;
+      document.body.appendChild(badge);
+      badge.querySelector(".logout-btn")?.addEventListener("click", () => {
+        try {
+          localStorage.removeItem("role");
+          localStorage.removeItem("user");
+        } catch (_) { }
+        window.location.href = "index.html";
+      });
+    }
+    // cria o badge se a sessão é válida (não ADM)
+    if (role && role !== "ADM") createSessionBadge();
+
+    let tags = [];
+    let printedSet = new Set(); // ids impressos para a loja (role) atual
+    let attentionSet = new Set(); // ids marcados com atenção para a loja (role) atual
+    const selectedTags = new Set(); // ids selecionados
+
+    function parseDateLocal(dateStr) {
+      if (!dateStr) return null;
+      const date = dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    function formatDate(dateStr) {
+      const date = parseDateLocal(dateStr);
+      if (!date) return "Data inválida";
+      const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+      return `${String(date.getDate()).padStart(2, "0")} ${meses[date.getMonth()]}`;
+    }
+
+    function getStatus(start, end) {
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const inicio = parseDateLocal(start);
+      const fim = parseDateLocal(end);
+      if (!inicio || !fim) return "expired";
+      if (fim < hoje) return "expired";
+      if (inicio > hoje) return "soon";
+      const diff = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+      if (diff <= 1) return "soon";
+      return "valid";
+    }
+
+    async function fetchTags() {
+      if (!window.db || !window.getDocs || !window.collection) {
+        console.error('Firebase não inicializado corretamente.');
+        return [];
+      }
+      const snapshot = await window.getDocs(window.collection(window.db, "tags"));
+      const results = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        results.push({
+          id: docSnap.id,
+          imgUrl: data.imgUrl,
+          start: data.start?.toDate ? data.start.toDate() : data.start,
+          end: data.end?.toDate ? data.end.toDate() : data.end,
+          comment: data.comment || "",
+          roles: data.roles || ["ALL"],
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt
+        });
+      });
+      return results;
+    }
+
+    // Busca os IDs de tags já impressas para a role (loja) atual
+    async function fetchPrintedSetForRole() {
+      try {
+        if (!role) return new Set();
+        const r = role.toLowerCase();
+        const q = window.query(window.collection(window.db, 'printedTags'), window.where('role', '==', r));
+        const snap = await window.getDocs(q);
+        const set = new Set();
+        snap.forEach(d => {
+          const data = d.data?.() || d.data();
+          let id = data?.tagId;
+          if (!id && typeof d.id === 'string' && d.id.includes('__')) {
+            id = d.id.split('__')[1];
+          }
+          if (id !== undefined && id !== null) set.add(String(id));
+        });
+        return set;
+      } catch (err) {
+        console.warn('Falha ao buscar impressas:', err);
+        return new Set();
+      }
+    }
+
+    // Busca os IDs com atenção para a role (loja) atual
+    async function fetchAttentionSetForRole() {
+      try {
+        if (!role) return new Set();
+        const r = role.toLowerCase();
+        const q = window.query(
+          window.collection(window.db, 'attentionTags'),
+          window.where('role', '==', r)
+        );
+        const snap = await window.getDocs(q);
+        const set = new Set();
+        snap.forEach(d => {
+          const data = d.data?.() || d.data();
+          const att = (data?.attention === undefined) ? true : !!data.attention;
+          let id = data?.tagId;
+          if (!id && typeof d.id === 'string' && d.id.includes('__')) {
+            id = d.id.split('__')[1];
+          }
+          if (att && id !== undefined && id !== null) set.add(String(id));
+        });
+        return set;
+      } catch (err) {
+        console.warn('Falha ao buscar atenções:', err);
+        return new Set();
+      }
+    }
+
+    // Marca uma ou várias tags como impressas para a role atual
+    async function markPrintedMany(ids) {
+      try {
+        if (!role || !Array.isArray(ids) || !ids.length) return;
+        const r = role.toLowerCase();
+        const promises = ids.map(async (tid) => {
+          const idStr = String(tid);
+          const docId = `${r}__${idStr}`;
+          try {
+            await window.setDoc(window.doc(window.db, 'printedTags', docId), {
+              role: r,
+              tagId: idStr,
+              printedAt: (typeof window.serverTimestamp === 'function') ? window.serverTimestamp() : new Date()
+            }, { merge: true });
+            printedSet.add(idStr);
+            // Se havia atenção para esta loja/tag, remove (badge deve sumir)
+            try {
+              await window.deleteDoc(window.doc(window.db, 'attentionTags', docId));
+              if (typeof attentionSet !== 'undefined' && attentionSet instanceof Set) {
+                attentionSet.delete(idStr);
+              }
+            } catch (_) { }
+            // remove de seleção em massa se estiver selecionada
+            if (selectedTags.has(idStr)) selectedTags.delete(idStr);
+          } catch (e) { /* ignora erro individual, tenta continuar */ }
+        });
+        await Promise.all(promises);
+        // Re-renderiza para refletir remoção em "Adicionar na Loja"
+        reRenderKeepingFilter();
+        updateBulkBar();
+      } catch (err) {
+        console.warn('Falha ao marcar impressas:', err);
+      }
+    }
+
+    async function ensureJsPDF() {
+      if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+      if (window._loadJsPDF) {
+        try { const jsPDF = await window._loadJsPDF; return jsPDF; } catch (_) { }
+      }
+      throw new Error('jsPDF indisponível');
+    }
+
+    // -------- Utilitários CORS-seguros --------
+    async function ensureJSZip() {
+      if (window.JSZip) return window.JSZip;
+      if (window._loadJSZip) {
+        try { await window._loadJSZip(); if (window.JSZip) return window.JSZip; } catch (_) {}
+      }
+      // fallback: aguarda script externo carregar
+      if (window.JSZip) return window.JSZip;
+      throw new Error('JSZip indisponível');
+    }
+
+    async function fetchBlobCors(url) {
+      const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.blob();
+    }
+
+    function blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function extFromMime(type) {
+      if (!type) return 'bin';
+      const map = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+      return map[type] || 'bin';
+    }
+
+
+
+    function renderTags(filter = "all", tagsList = tags) {
+      const grid = document.getElementById("tagsGrid");
+      grid.innerHTML = "";
+      let countValid = 0, countSoon = 0, countExpired = 0;
+      const userRole = role?.toLowerCase(); // corrigido: usar a role da sessão
+
+      tagsList.forEach(tag => {
+        const status = getStatus(tag.start, tag.end);
+        const isPrinted = printedSet?.has(String(tag.id));
+
+        // Filtro de visualização
+        if (filter === 'printed') {
+          if (!isPrinted) return;
+        } else if (filter === 'valid') {
+          // "Adicionar na Loja": mostrar somente as NÃO impressas e não vencidas (inclui valid + soon)
+          if (isPrinted) return;
+          if (status === 'expired') return;
+        } else {
+          if (filter !== "all" && status !== filter) return;
+        }
+
+        const tagRoles = (tag.roles || []).map(r => r.toLowerCase());
+        if (!tagRoles.includes("all") && !tagRoles.includes(userRole)) return;
+
+        if (status === "valid") countValid++;
+        else if (status === "soon") countSoon++;
+        else countExpired++;
+
+        const div = document.createElement("div");
+        div.className = "tag";
+        div.style.borderColor = status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c";
+        if (!div.style.position) div.style.position = 'relative';
+        div.innerHTML = `
+                    <div class="tag-head">
+                      <label class="select-row">
+                        <input type="checkbox" class="tag-select" data-id="${tag.id}" ${selectedTags.has(tag.id) ? "checked" : ""}>
+                      </label>
+                      <div class="tag-actions">
+                        ${attentionSet?.has(String(tag.id)) && !isPrinted ? `<span class="attention-indicator" title="Atenção desta tag" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#c92222;color:#fff;margin-top:4px;box-shadow:0 1px 3px rgba(0,0,0,0.25);"><i class='fa-solid fa-exclamation' style='font-size:14px;line-height:1;'></i></span>` : ``}
+                        <button type="button" class="action-btn download" title="Baixar" data-id="${tag.id}"><i class="fa-solid fa-circle-down"></i></button>
+                        <button type="button" class="action-btn print" title="Imprimir" data-id="${tag.id}"><i class="fa-solid fa-print"></i></button>
+                      </div>
+                    </div>
+                    <img src="${tag.imgUrl || 'placeholder.png'}" alt="tag">
+                    <small>${formatDate(tag.start)} a ${formatDate(tag.end)}</small>
+                    <small>Lojas: ${((tag.roles || []).includes("ALL")) ? "Todas" : (tag.roles || []).join(", ")}</small>
+                    ${tag.comment ? `<div class="comment-bubble"></div><div class="comment-text">${tag.comment}</div>` : ""}
+                  `;
+        grid.appendChild(div);
+
+
+        // Deixa os ícones verdes quando já foi impressa para esta loja
+        if (isPrinted) {
+          const dlBtn = div.querySelector('.action-btn.download i');
+          const prBtn = div.querySelector('.action-btn.print i');
+          dlBtn?.style.setProperty('color', '#27ae60', 'important');
+          prBtn?.style.setProperty('color', '#27ae60', 'important');
+          const pr = div.querySelector('.action-btn.print');
+          pr?.setAttribute('title', 'Impressa');
+        }
+
+        // Eventos de UI (visual apenas)
+        const checkbox = div.querySelector('.tag-select');
+        checkbox?.addEventListener('change', (e) => {
+          const id = checkbox.getAttribute('data-id');
+          if (checkbox.checked) selectedTags.add(id); else selectedTags.delete(id);
+          updateBulkBar();
+        });
+
+        // Botões individuais: apenas feedback visual por enquanto
+        div.querySelector('.action-btn.download')?.addEventListener('click', async () => {
+          const status = window.getStatus(tag.start, tag.end);
+          if (status === "expired") {
+            if (window.Swal) {
+              Swal.fire({ icon: 'warning', title: 'Download bloqueado', text: 'Esta tag está vencida e não pode ser baixada!' });
+            } else {
+              alert('Esta tag está vencida e não pode ser baixada!');
+            }
+            return;
+          }
+          // Download forçado via blob
+          try {
+            const response = await fetch(tag.imgUrl);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tag_${tag.id}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            // Marca como impressa/baixada para esta loja
+            await markPrintedMany([tag.id]);
+          } catch (e) {
+            alert('Erro ao baixar a imagem.');
+          }
+        });
+
+        // Novo: imprimir = gerar PDF, baixar e abrir em nova guia
+        div.querySelector('.action-btn.print')?.addEventListener('click', async () => {
+          const status = window.getStatus(tag.start, tag.end);
+          if (status === "expired") {
+            if (window.Swal) {
+              Swal.fire({ icon: 'warning', title: 'Impressão bloqueada', text: 'Esta tag está vencida e não pode ser impressa!' });
+            } else {
+              alert('Esta tag está vencida e não pode ser impressa!');
+            }
+            return;
+          }
+          try {
+            const JsPDF = await ensureJsPDF();
+            if (!JsPDF) {
+              if (window.Swal) {
+                await Swal.fire({ icon: 'error', title: 'PDF indisponível', text: 'Aguarde o carregamento do gerador de PDF e tente novamente.' });
+              } else {
+                alert('Gerador de PDF ainda não carregado.');
+              }
+              return;
+            }
+            const resp = await fetch(tag.imgUrl, { cache: 'no-store' });
+            const imgBlob = await resp.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+              const fr = new FileReader();
+              fr.onload = () => resolve(fr.result);
+              fr.onerror = reject;
+              fr.readAsDataURL(imgBlob);
+            });
+            const img = await new Promise((resolve) => {
+              const im = new Image();
+              im.onload = () => resolve(im);
+              im.src = dataUrl;
+            });
+            // Se a tag for específica de loja (não ALL), recorta uma pequena faixa inferior
+            const isSpecificStore = Array.isArray(tag.roles) && !tag.roles.includes('ALL');
+            let finalDataUrl = dataUrl;
+            if (isSpecificStore) {
+              const cropRatio = 0; // corta 0% da altura na base
+              const cropH = Math.max(1, Math.round(img.height * (1 - cropRatio)));
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = cropH;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, img.width, cropH, 0, 0, canvas.width, canvas.height);
+              finalDataUrl = canvas.toDataURL(imgBlob.type || 'image/png');
+            }
+            // Página do PDF ajustada ao tamanho da imagem final (sem bordas)
+            const renderImg = await new Promise((resolve) => { const m = new Image(); m.onload = () => resolve(m); m.src = finalDataUrl; });
+            const pageWidthPt = renderImg.width;
+            const pageHeightPt = renderImg.height;
+            const pdf = new JsPDF({ unit: 'pt', format: [pageWidthPt, pageHeightPt] });
+            const format = imgBlob.type.includes('jpeg') || imgBlob.type.includes('jpg') ? 'JPEG' : 'PNG';
+            pdf.addImage(finalDataUrl, format, 0, 0, pageWidthPt, pageHeightPt);
+            const pdfBlob = pdf.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            // Abre em nova guia e também baixa
+            window.open(pdfUrl, '_blank', 'noopener');
+            const a = document.createElement('a');
+            a.href = pdfUrl;
+            a.download = `tag_${tag.id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+            // Marca como impressa
+            await markPrintedMany([tag.id]);
+          } catch (err) {
+            console.error('Falha ao gerar PDF:', err);
+            if (window.Swal) {
+              Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o PDF desta tag.' });
+            } else {
+              alert('Não foi possível gerar o PDF desta tag.');
+            }
+          }
+        });
+      });
+
+      document.getElementById("countValid").textContent = countValid;
+      document.getElementById("countSoon").textContent = countSoon;
+      document.getElementById("countExpired").textContent = countExpired;
+      document.getElementById("countTotal").textContent = countValid + countSoon + countExpired;
+
+      // Atualiza bulk bar ao final da renderização
+      updateBulkBar();
+      // Atualiza indicador de atenção no filtro "Adicionar na Loja"
+      updateAttentionFilterDot();
+    }
+    // Expor getStatus e tags para outros scripts
+    window.getStatus = getStatus;
+    window.tags = tags;
+
+
+    function updateBulkBar() {
+      const bar = document.getElementById('bulkActions');
+      const selCount = selectedTags.size;
+      const selectedCountEl = document.getElementById('selectedCount');
+      if (selectedCountEl) selectedCountEl.textContent = String(selCount);
+      if (!bar) return;
+      if (selCount >= 2) {
+        bar.hidden = false;
+      } else {
+        bar.hidden = true;
+      }
+    }
+
+    // Mostra uma bolinha vermelha no botão "Adicionar na Loja" quando há alguma TAG com atenção
+    function updateAttentionFilterDot() {
+      try {
+        const btn = document.querySelector('button.filter[data-filter="valid"]');
+        if (!btn) return;
+        btn.style.position = 'relative';
+        // remove dot anterior
+        btn.querySelector('.att-dot')?.remove();
+        const r = role?.toLowerCase();
+        if (!Array.isArray(tags) || !attentionSet || !attentionSet.size) return;
+        const hasAttention = tags.some(t => {
+          const id = String(t.id);
+          if (!attentionSet.has(id)) return false;
+          if (printedSet?.has(id)) return false; // já impressa, não alerta
+          const st = getStatus(t.start, t.end);
+          if (st === 'expired') return false; // vencida não entra em "Adicionar na Loja"
+          const tagRoles = (t.roles || []).map(x => String(x).toLowerCase());
+          if (!tagRoles.includes('all') && !tagRoles.includes(r)) return false;
+          return true;
+        });
+        if (hasAttention) {
+          const dot = document.createElement('span');
+          dot.className = 'att-dot';
+          Object.assign(dot.style, {
+            position: 'absolute',
+            top: '-4px',
+            right: '-4px',
+            width: '10px',
+            height: '10px',
+            background: '#c92222',
+            borderRadius: '50%',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.25)'
+          });
+          dot.title = 'Há tags com atenção para adicionar na loja';
+          btn.appendChild(dot);
+        }
+      } catch (_) { /* silencioso */ }
+    }
+
+    async function init() {
+      try {
+        const [tagsRes, printedRes, attentionRes] = await Promise.all([
+          fetchTags(),
+          fetchPrintedSetForRole(),
+          fetchAttentionSetForRole()
+        ]);
+        tags = tagsRes;
+        window.tags = tags;
+        printedSet = printedRes;
+        attentionSet = attentionRes;
+        reRenderKeepingFilter();
+      } catch (err) {
+        console.error('Falha ao carregar tags inicialmente:', err);
+      }
+      setInterval(async () => {
+        try {
+          const [tagsRes, printedRes, attentionRes] = await Promise.all([
+            fetchTags(),
+            fetchPrintedSetForRole(),
+            fetchAttentionSetForRole()
+          ]);
+          tags = tagsRes;
+          window.tags = tags;
+          printedSet = printedRes;
+          attentionSet = attentionRes;
+          reRenderKeepingFilter();
+        } catch (err) {
+          console.warn('Falha ao atualizar tags:', err);
+        }
+      }, 10000);
+
+      // Selecionar visíveis (toggle)
+      document.getElementById('selectAllVisible')?.addEventListener('change', (e) => {
+        const grid = document.getElementById('tagsGrid');
+        const boxes = grid.querySelectorAll('.tag-select');
+        const check = e.target.checked;
+        boxes.forEach(b => {
+          const id = b.getAttribute('data-id');
+          b.checked = check;
+          if (check) selectedTags.add(id); else selectedTags.delete(id);
+        });
+        updateBulkBar();
+      });
+    }
+    init();
+
+    // Registro do botão "Baixar Selecionadas" (fora do render e sem depender do DOMContentLoaded já ter disparado)
+    function registerBulkDownloadListener() {
+      const bulkBtn = document.getElementById('bulkDownload');
+      if (!bulkBtn) return;
+      if (bulkBtn._zipListener) return; // evita múltiplos listeners
+      bulkBtn._zipListener = true;
+      bulkBtn.addEventListener('click', async () => {
+        // feedback visual
+        const originalText = bulkBtn.innerHTML;
+        bulkBtn.disabled = true;
+        bulkBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparando ZIP...';
+        try {
+          const JSZip = await ensureJSZip();
+          const grid = document.getElementById('tagsGrid');
+          const boxes = grid.querySelectorAll('.tag-select:checked');
+          if (!boxes.length) {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'warning', title: 'Nenhuma selecionada', text: 'Selecione ao menos uma tag para baixar.' });
+            } else {
+              alert('Selecione ao menos uma tag para baixar.');
+            }
+            return;
+          }
+          let bloqueadas = 0;
+          const zip = new JSZip();
+          const successIds = [];
+          let countAdded = 0;
+          for (const box of boxes) {
+            const id = box.getAttribute('data-id');
+            const tag = (window.tags || tags).find(t => String(t.id) === String(id));
+            if (!tag) continue;
+            const status = window.getStatus(tag.start, tag.end);
+            if (status === 'expired') { bloqueadas++; continue; }
+            try {
+              const blob = await fetchBlobCors(tag.imgUrl);
+              const ext = extFromMime(blob.type) || 'png';
+              zip.file(`tag_${tag.id}.${ext}`, blob);
+              countAdded++;
+              successIds.push(tag.id);
+            } catch (_) { /* ignora erro individual */ }
+          }
+          if (countAdded > 0) {
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tags_selecionadas.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+            await markPrintedMany(successIds);
+          } else {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'info', title: 'Nada para baixar', text: 'Nenhuma tag válida selecionada.' });
+            } else {
+              alert('Nenhuma tag válida selecionada.');
+            }
+          }
+          if (bloqueadas) {
+            const msg = `${bloqueadas} tag(s) vencida(s) não foram baixadas.`;
+            if (window.Swal) { await Swal.fire({ icon: 'warning', title: 'Algumas não baixadas', text: msg }); } else { alert(msg); }
+          }
+        } finally {
+          bulkBtn.disabled = false;
+          bulkBtn.innerHTML = originalText;
+        }
+      });
+    }
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', registerBulkDownloadListener);
+    } else {
+      registerBulkDownloadListener();
+    }
+
+    // Registro do botão "Imprimir Selecionadas": gera PDF com uma por página, baixa e abre em nova aba
+    function registerBulkPrintListener() {
+      const btn = document.getElementById('bulkPrint');
+      if (!btn) return;
+      if (btn._bulkPrint) return;
+      btn._bulkPrint = true;
+      btn.addEventListener('click', async () => {
+        const JsPDF = await ensureJsPDF();
+        if (!JsPDF) {
+          if (window.Swal) {
+            await Swal.fire({ icon: 'error', title: 'PDF indisponível', text: 'Aguarde o carregamento do gerador de PDF e tente novamente.' });
+          } else {
+            alert('Gerador de PDF ainda não carregado.');
+          }
+          return;
+        }
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando PDF...';
+        try {
+          const selected = Array.from(selectedTags);
+          if (!selected.length) {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'warning', title: 'Nenhuma selecionada', text: 'Selecione ao menos uma tag para imprimir.' });
+            } else {
+              alert('Selecione ao menos uma tag para imprimir.');
+            }
+            return;
+          }
+          let pdf = null;
+          let anyAdded = false;
+          const successIds = [];
+          for (let i = 0; i < selected.length; i++) {
+            const id = selected[i];
+            const tag = (window.tags || []).find(t => String(t.id) === String(id));
+            if (!tag) continue;
+            const status = window.getStatus(tag.start, tag.end);
+            if (status === 'expired') continue;
+            try {
+              const resp = await fetch(tag.imgUrl, { cache: 'no-store' });
+              const blob = await resp.blob();
+              const dataUrl = await new Promise((resolve, reject) => {
+                const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob);
+              });
+              const img = await new Promise((resolve) => { const im = new Image(); im.onload = () => resolve(im); im.src = dataUrl; });
+              const isSpecificStore = Array.isArray(tag.roles) && !tag.roles.includes('ALL');
+              let finalDataUrl = dataUrl;
+              if (isSpecificStore) {
+                const cropRatio = 0.10;
+                const cropH = Math.max(1, Math.round(img.height * (1 - cropRatio)));
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = cropH;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, img.width, cropH, 0, 0, canvas.width, canvas.height);
+                finalDataUrl = canvas.toDataURL(blob.type || 'image/png');
+              }
+              const renderImg = await new Promise((resolve) => { const m = new Image(); m.onload = () => resolve(m); m.src = finalDataUrl; });
+              const pageW = renderImg.width;
+              const pageH = renderImg.height;
+              const format = blob.type.includes('jpeg') || blob.type.includes('jpg') ? 'JPEG' : 'PNG';
+              if (!pdf) {
+                pdf = new JsPDF({ unit: 'pt', format: [pageW, pageH] });
+              } else {
+                pdf.addPage([pageW, pageH]);
+              }
+              pdf.addImage(finalDataUrl, format, 0, 0, pageW, pageH);
+              anyAdded = true;
+              successIds.push(tag.id);
+            } catch (_) { /* ignora erro individual */ }
+          }
+          if (!anyAdded) {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'info', title: 'Nada para imprimir', text: 'Nenhuma tag válida selecionada.' });
+            } else {
+              alert('Nenhuma tag válida selecionada.');
+            }
+            return;
+          }
+          const blob = pdf.output('blob');
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank', 'noopener');
+          const a = document.createElement('a');
+          a.href = url; a.download = 'tags_selecionadas.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          // Marca como impressas as que foram adicionadas ao PDF
+          await markPrintedMany(successIds);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = original;
+        }
+      });
+    }
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', registerBulkPrintListener);
+    } else {
+      registerBulkPrintListener();
+    }
+
+    // Reaplica a visão atual conforme filtro/search/recentes
+    function reRenderKeepingFilter() {
+      const searchInput = document.getElementById('search');
+      const raw = (searchInput?.value || '').trim();
+      if (raw) {
+        const term = raw.toLowerCase();
+        const dayMatch = /^\d{1,2}$/.test(term) ? parseInt(term, 10) : null;
+        const range = parseDayRange(term);
+        const filtered = (tags || []).filter(tag => {
+          const textMatch = (tag.comment || "").toLowerCase().includes(term) ||
+            (tag.roles || []).some(r => r.toLowerCase().includes(term));
+          if (dayMatch !== null && dayMatch >= 1 && dayMatch <= 31) {
+            if (dayMatches(tag, dayMatch)) return true;
+          }
+          if (range) {
+            const s = parseDateLocal(tag.start);
+            const e = parseDateLocal(tag.end);
+            const sd = s ? s.getDate() : -1;
+            const ed = e ? e.getDate() : -1;
+            if ((sd >= range.d1 && sd <= range.d2) || (ed >= range.d1 && ed <= range.d2)) return true;
+          }
+          return textMatch;
+        });
+        renderTags('all', filtered);
+        return;
+      }
+      const recentBtn = document.getElementById('Recentes');
+      if (recentBtn && recentBtn.classList.contains('active')) {
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const hojeTags = (tags || []).filter(tag => {
+          const created = parseDateLocal(tag.createdAt);
+          if (!created) return false;
+          created.setHours(0, 0, 0, 0);
+          return created.getTime() === hoje.getTime();
+        });
+        renderTags('all', hojeTags.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        return;
+      }
+      const activeBtn = document.querySelector('.filter.active');
+      const activeFilter = activeBtn?.dataset?.filter || 'all';
+      renderTags(activeFilter);
+    }
+
+    // Filtros
+    document.querySelectorAll('.filter').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Só chama renderTags direto quando o botão possui data-filter (all/valid/expired)
+        if (btn.dataset && typeof btn.dataset.filter !== 'undefined') {
+          renderTags(btn.dataset.filter);
+        }
+      });
+    });
+    document.getElementById("Recentes")?.addEventListener("click", () => {
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const hojeTags = tags.filter(tag => {
+        const created = parseDateLocal(tag.createdAt);
+        if (!created) return false;
+        created.setHours(0, 0, 0, 0);
+        return created.getTime() === hoje.getTime();
+      });
+      renderTags("all", hojeTags.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    });
+
+    const searchInput = document.getElementById("search");
+    function dayMatches(tag, day) {
+      const s = parseDateLocal(tag.start);
+      const e = parseDateLocal(tag.end);
+      const sd = s ? s.getDate() : -1;
+      const ed = e ? e.getDate() : -1;
+      return sd === day || ed === day;
+    }
+    function parseDayRange(term) {
+      const m = term.match(/^(\d{1,2})\s*a\s*(\d{1,2})$/i);
+      if (!m) return null;
+      let d1 = parseInt(m[1], 10), d2 = parseInt(m[2], 10);
+      if (isNaN(d1) || isNaN(d2)) return null;
+      if (d1 < 1 || d1 > 31 || d2 < 1 || d2 > 31) return null;
+      if (d1 > d2) { const t = d1; d1 = d2; d2 = t; }
+      return { d1, d2 };
+    }
+    searchInput?.addEventListener("input", () => {
+      const raw = searchInput.value.trim();
+      const term = raw.toLowerCase();
+      if (!term) { renderTags(); return; }
+      // Se o usuário digitar apenas o dia (1-31, com ou sem zero à esquerda), filtra por validade (início ou fim)
+      const dayMatch = /^\d{1,2}$/.test(term) ? parseInt(term, 10) : null;
+      const range = parseDayRange(term);
+      const filtered = tags.filter(tag => {
+        const textMatch = (tag.comment || "").toLowerCase().includes(term) ||
+          (tag.roles || []).some(r => r.toLowerCase().includes(term));
+        if (dayMatch !== null && dayMatch >= 1 && dayMatch <= 31) {
+          if (dayMatches(tag, dayMatch)) return true;
+        }
+        if (range) {
+          const s = parseDateLocal(tag.start);
+          const e = parseDateLocal(tag.end);
+          const sd = s ? s.getDate() : -1;
+          const ed = e ? e.getDate() : -1;
+          if ((sd >= range.d1 && sd <= range.d2) || (ed >= range.d1 && ed <= range.d2)) return true;
+        }
+        return textMatch;
+      });
+      renderTags("all", filtered);
+    });
+  </script>
+</body>
+
+</html>

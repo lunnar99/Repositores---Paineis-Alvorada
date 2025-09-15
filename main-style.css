@@ -1,0 +1,319 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: poppins, sans-serif;
+}
+
+body {
+  background: #d5e3da;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  background: #fff;
+  border-radius: 15px;
+  padding: 16px;
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Top header with search + filters + counts */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.topbar .searchbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar .searchbox h2 {
+  color: #6b8c74;
+  font-size: 18px;
+}
+.topbar .searchbox input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #6b8c74;
+  border-radius: 8px;
+  outline: none;
+}
+.topbar .filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.topbar .counts {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+header h1 {
+  color: #6b8c74;
+  font-size: 24px;
+}
+
+header input {
+  padding: 8px 12px;
+  border: 1px solid #6b8c74;
+  border-radius: 20px;
+  outline: none;
+}
+
+.border {
+  width: 1px;
+  background: #ccc;
+  height: 24px;
+  margin: 0 10px;
+  align-self: center;
+  margin-left: 10px;
+  margin-right: 16px;
+}
+
+.filters {
+  margin: 10px 0 0 0;
+  display: flex;
+}
+
+.filters button {
+  padding: 10px 16px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 15px;
+  background: #eee;
+  cursor: pointer;
+  height: 40px;
+  line-height: 20px;
+}
+
+.filters button.active {
+  background: #6b8c74;
+  color: #fff;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 15px;
+}
+
+.tag {
+  border: 3px solid;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Cabeçalho da tag: seleção + botões */
+.tag-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.select-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #444;
+}
+.tag-actions { display: inline-flex; gap: 6px; }
+.action-btn {
+  border: 1px solid #cfd8d3;
+  background: #f7faf8;
+  color: #2d4739;
+  border-radius: 8px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.action-btn:hover { background: #eef4f0; }
+
+.tag img {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.tag small {
+  font-size: 12px;
+  color: #555;
+}
+
+.tag .actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 5px;
+}
+
+.tag .actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Sidebar removido na nova estrutura */
+
+.sidebar p {
+  margin: 8px 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.green { background: #27ae60; }
+.orange { background: #f39c12; }
+.red { background: #e74c3c; }
+
+.form-section {
+  background: #f1f8f4;
+  padding: 15px;
+  border-radius: 12px;
+  grid-column: span 2;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+form input, form textarea, form button {
+  padding: 10px;
+  border: 1px solid #6b8c74;
+  border-radius: 8px;
+}
+
+form textarea {
+  resize: none;
+  height: 60px;
+}
+
+form button {
+  background: #6b8c74;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+form button:hover {
+  background: #56735d;
+}
+
+
+    .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; }
+    .modal-content { background:#fff; padding:20px; border-radius:10px; width:350px; max-height:80%; overflow-y:auto;}
+    .tag-checkbox { display:flex; align-items:center; margin-bottom:5px; }
+    .tag-checkbox img { width:40px; height:40px; margin-right:10px; }
+
+    .modal-content h2 {
+      margin-bottom: 20px;
+      color: #cf0e0e;
+      font-size: 18px;
+    }
+
+    /* Session badge (user + role + logout) */
+    .session-badge {
+      position: fixed;
+      right: 12px;
+      top: 12px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+      font-size: 12px;
+      backdrop-filter: saturate(150%) blur(2px);
+    }
+    .session-badge .id { font-weight: 600; }
+    .session-badge .sep { opacity: .7; }
+    .session-badge .flag {
+      background: #2d6a4f;
+      color: #e9f5ef;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+    .session-badge .logout-btn {
+      margin-left: 4px;
+      background: #dc3545;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .session-badge .logout-btn:hover {
+      background: #b02a37;
+    }
+
+/* Bulk actions bar */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eff6f1;
+  border: 1px solid #c8e0d1;
+  color: #2f5d45;
+  padding: 8px 12px;
+  border-radius: 10px;
+  flex-wrap: wrap; /* allow wrapping to avoid overflow */
+  gap: 8px;
+}
+.bulk-actions .bulk-left { display:flex; align-items:center; gap:8px; }
+.bulk-actions .bulk-left .sep { opacity:.5; }
+.bulk-actions .bulk-right { display:flex; align-items:center; gap:8px; }
+.bulk-btn {
+  border: 1px solid #7fb08f;
+  background: #e6f2eb;
+  color: #2f5d45;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.bulk-btn.primary { background: #6b8c74; color:#fff; border-color:#6b8c74; }
+.bulk-btn:hover { filter: brightness(0.98); }
+
+/* Mobile: stack bulk bar items and make buttons full-width */
+@media (max-width: 575px) {
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bulk-actions .bulk-left,
+  .bulk-actions .bulk-right {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .bulk-actions .bulk-right {
+    justify-content: stretch;
+  }
+  .bulk-actions .bulk-right .bulk-btn {
+    flex: 1 1 100%;
+  }
+  .bulk-btn { white-space: normal; }
+}
