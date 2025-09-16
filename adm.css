@@ -15,8 +15,9 @@ body {
 .container {
     background: #fff;
     border-radius: 15px;
-    padding: 20px;
-    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     max-width: 1200px;
     display: flex;
     flex-direction: column;
@@ -26,9 +27,8 @@ body {
 /* Header */
 header {
     text-align: center;
-}
 
-header h1 {
+    margin: 0;
     color: #6b8c74;
     font-size: 24px;
 }
@@ -58,6 +58,7 @@ form button {
     padding: 10px;
     height: 50px;
 }
+
 /* Custom nicer file button (keeps native input for compatibility) */
 input[type="file"] {
     border: 1px dashed #6b8c74;
@@ -65,6 +66,7 @@ input[type="file"] {
     border-radius: 10px;
     background: #f7faf8;
 }
+
 input[type="file"]::file-selector-button {
     margin-right: 12px;
     border: 1px solid #6b8c74;
@@ -75,10 +77,23 @@ input[type="file"]::file-selector-button {
     cursor: pointer;
     transition: filter .2s ease, background-color .2s ease;
 }
-input[type="file"]::file-selector-button:hover { filter: brightness(0.95); }
-input[type="file"]:focus-visible { outline: 3px solid rgba(107,140,116,.35); outline-offset: 2px; }
 
-.file-info{ display:block; margin-top:6px; color:#344b3b; font-size:12px; opacity:.85; }
+input[type="file"]::file-selector-button:hover {
+    filter: brightness(0.95);
+}
+
+input[type="file"]:focus-visible {
+    outline: 3px solid rgba(107, 140, 116, .35);
+    outline-offset: 2px;
+}
+
+.file-info {
+    display: block;
+    margin-top: 6px;
+    color: #344b3b;
+    font-size: 12px;
+    opacity: .85;
+}
 
 form button {
     background: #6b8c74;
@@ -113,7 +128,8 @@ form button:hover {
 
 /* Date Range Picker - leve e embutido */
 .drp {
-    position: absolute; /* overlaid, not pushing layout */
+    position: absolute;
+    /* overlaid, not pushing layout */
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -185,21 +201,54 @@ form button:hover {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
-    justify-content: center;
-    align-items: center;
 }
 
 .modal-content {
     background: #fff;
     padding: 20px;
-    border-radius: 8px;
-    width: 500px;
-    max-height: 80vh;
+    border-radius: 12px;
+    width: 890px;
+    max-height: 120vh;
     overflow-y: auto;
     position: relative;
+    position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+
+    /* Checkbox grid compacto */
+    .modal-content .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px 10px;
+        margin-bottom: 12px;
+        padding: 0 8px;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .modal-content .checkbox-label {
+        font-size: 0.98em;
+        padding: 2px 0 2px 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Botões do filtro */
+    .modal-content .filter-btns {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+
+    .modal-content .filter-btns button {
+        font-size: 0.98em;
+        padding: 7px 16px;
+        border-radius: 7px;
+        min-width: 80px;
+    }
 }
 
 .close {
@@ -243,14 +292,15 @@ form button:hover {
 
 /* Loading overlay (bloqueia cliques) */
 .loading-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.35);
-        display: none; /* shown via JS */
-        align-items: center;
-        justify-content: center;
-        z-index: 100000;
-        backdrop-filter: blur(1px);
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    /* shown via JS */
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    backdrop-filter: blur(1px);
 }
 
 /* Loader circular em verde do projeto */
@@ -261,12 +311,15 @@ form button:hover {
     background:
         radial-gradient(farthest-side, #27ae60 94%, #0000) top/10px 10px no-repeat,
         conic-gradient(#0000 30%, #27ae60);
-        mask: radial-gradient(farthest-side, #0000 calc(100% - 10px), #000 0);
-        -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 10px), #000 0);
+    mask: radial-gradient(farthest-side, #0000 calc(100% - 10px), #000 0);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 10px), #000 0);
     animation: l13 1s infinite linear;
 }
-@keyframes l13{
-    100%{ transform: rotate(1turn) }
+
+@keyframes l13 {
+    100% {
+        transform: rotate(1turn)
+    }
 }
 
 /* Session badge (user + role + logout) */
@@ -274,7 +327,7 @@ form button:hover {
     position: fixed;
     right: 12px;
     top: 12px;
-    background: rgba(0,0,0,0.75);
+    background: rgba(0, 0, 0, 0.75);
     color: #fff;
     padding: 6px 10px;
     border-radius: 10px;
@@ -285,8 +338,15 @@ form button:hover {
     font-size: 12px;
     backdrop-filter: saturate(150%) blur(2px);
 }
-.session-badge .id { font-weight: 600; }
-.session-badge .sep { opacity: .7; }
+
+.session-badge .id {
+    font-weight: 600;
+}
+
+.session-badge .sep {
+    opacity: .7;
+}
+
 .session-badge .flag {
     background: #2d6a4f;
     color: #e9f5ef;
@@ -294,6 +354,7 @@ form button:hover {
     border-radius: 8px;
     font-size: 11px;
 }
+
 .session-badge .logout-btn {
     margin-left: 4px;
     background: #dc3545;
@@ -304,6 +365,7 @@ form button:hover {
     cursor: pointer;
     font-size: 11px;
 }
+
 .session-badge .logout-btn:hover {
     background: #b02a37;
 }
@@ -313,15 +375,17 @@ form button:hover {
 .tags-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 24px; /* espaço entre os cards */
-    padding: 20px; /* espaço entre os cards e a borda do container */
+    gap: 24px;
+    /* espaço entre os cards */
+    padding: 20px;
+    /* espaço entre os cards e a borda do container */
 }
 
 .tags-grid .tag {
     border: 2px solid #27ae60;
     border-radius: 8px;
     padding: 10px;
-    text-align: center; 
+    text-align: center;
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -444,7 +508,9 @@ form button:hover {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-wrap: wrap; /* allow wrapping to avoid overflow */
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    /* allow wrapping to avoid overflow */
 }
 
 .select-section input[type="checkbox"] {
@@ -461,12 +527,14 @@ form button:hover {
     border-radius: 6px;
     cursor: pointer;
     transition: 0.3s;
-    height: 40px; /* uniform height */
+    height: 40px;
+    /* uniform height */
     line-height: 24px;
+    white-space: nowrap;
 }
 
 /* Improve Select All control look */
-input#selectAll + label[for="selectAll"] {
+input#selectAll+label[for="selectAll"] {
     padding: 6px 10px;
     border: 1px solid #6b8c74;
     border-radius: 8px;
@@ -475,13 +543,15 @@ input#selectAll + label[for="selectAll"] {
     user-select: none;
     cursor: pointer;
 }
-input#selectAll:checked + label[for="selectAll"] {
+
+input#selectAll:checked+label[for="selectAll"] {
     background: #e3efe7;
     border-color: #27ae60;
     color: #205b38;
 }
-input#selectAll:focus + label[for="selectAll"],
-input#selectAll:focus-visible + label[for="selectAll"] {
+
+input#selectAll:focus+label[for="selectAll"],
+input#selectAll:focus-visible+label[for="selectAll"] {
     outline: 2px solid #27ae60;
     outline-offset: 2px;
 }
@@ -491,9 +561,11 @@ input#selectAll:focus-visible + label[for="selectAll"] {
     flex: 1 1 280px;
     width: 100%;
     max-width: 420px;
-    min-width: 0; /* allow shrinking in flex */
+    min-width: 0;
+    /* allow shrinking in flex */
     box-sizing: border-box;
-    margin-left: 0 !important; /* override inline margin on small screens */
+    margin-left: 0 !important;
+    /* override inline margin on small screens */
     height: 40px;
 }
 
@@ -649,7 +721,8 @@ input#selectAll:focus-visible + label[for="selectAll"] {
     .select-section {
         flex-direction: row;
         align-items: center;
-        margin-left: 0; /* prevent horizontal overflow */
+        margin-left: 0;
+        /* prevent horizontal overflow */
         gap: 8px;
         flex-wrap: wrap;
     }
@@ -672,7 +745,7 @@ input#selectAll:focus-visible + label[for="selectAll"] {
 
 /* ====== CELULARES PEQUENOS (< 576px) ====== */
 @media (max-width: 575px) {
-    
+
     header h1 {
         font-size: 18px;
     }
@@ -725,13 +798,15 @@ input#selectAll:focus-visible + label[for="selectAll"] {
         flex-basis: 100%;
         max-width: 100%;
         width: 100%;
-        margin-left: 0 !important; /* ensure no push to the right */
+        margin-left: 0 !important;
+        /* ensure no push to the right */
     }
 
     .select-section button,
     #openFilters-tags {
         flex: 1 1 calc(50% - 8px);
-        height: 44px; /* touch-friendly */
+        height: 44px;
+        /* touch-friendly */
     }
 
 

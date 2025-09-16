@@ -14,21 +14,70 @@ body {
 
 .container {
   background: #fff;
-  border-radius: 15px;
-  padding: 16px;
+  border-radius: 18px;
+  padding: 0;
   width: 100%;
-  max-width: 1200px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  max-width: 1300px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
-/* Top header with search + filters + counts */
-.topbar {
+/* Header (logo + search + login) */
+.app-header {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 240px 1fr 200px;
   gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e6efe9;
+  background: linear-gradient(180deg, #f7fbf8 0%, #ffffff 100%);
 }
+.app-logo { width: 100%; object-fit: contain; }
+.header-left { display:flex; align-items:center; }
+.header-center { display:flex; justify-content:center; }
+.header-right { display:flex; justify-content:flex-end; }
+.search-input {
+  width: 100%;
+  max-width: 720px;
+  padding: 10px 14px;
+  border: 1px solid #b9d1c2;
+  border-radius: 14px;
+  outline: none;
+  background: #fff;
+}
+.store-info { display:flex; align-items:center; gap:12px; color:#2d4739; font-weight:600; }
+.logout-top { border:1px solid #cfd8d3; background:#f7faf8; padding:6px 10px; border-radius:10px; cursor:pointer; }
+.logout-top:hover { background:#eef4f0; }
+
+/* Main layout: sidebar + content */
+.layout { display:grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 160px); }
+.sidebar {
+  background: #f6faf8;
+  border-right: 1px solid #e6efe9;
+  padding: 16px 12px;
+}
+.side-nav { display:flex; flex-direction:column; gap:10px; }
+.side-nav .filter { display:flex; align-items:center; gap:10px; justify-content:flex-start; background:#eef4f0; border:none; padding:10px 12px; border-radius:12px; color:#2d4739; cursor:pointer; }
+.side-nav .filter:hover { filter:brightness(0.98); }
+.side-nav .filter.active { background:#27ae60; color:#fff; }
+.side-nav .filter i { width:20px; text-align:center; color:#6b8c74; }
+.side-nav .filter.active i { color:#fff; }
+.side-divider { height:1px; background:#e6efe9; margin:12px 0; }
+
+.content { padding: 16px; display:flex; flex-direction:column; gap: 12px; }
+
+/* Contadores: horizontal e centralizados */
+.counts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.counts p { display:flex; align-items:center; gap:6px; color:#2d4739; }
+
+/* Top header with search + filters + counts */
+/* legacy topbar removed in favor of app-header */
 .topbar .searchbox {
   display: flex;
   align-items: center;
@@ -80,10 +129,7 @@ header input {
   margin-right: 16px;
 }
 
-.filters {
-  margin: 10px 0 0 0;
-  display: flex;
-}
+.filters { display:flex; }
 
 .filters button {
   padding: 10px 16px;
@@ -103,7 +149,7 @@ header input {
 
 .tags-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 15px;
 }
 
@@ -182,6 +228,7 @@ header input {
 .green { background: #27ae60; }
 .orange { background: #f39c12; }
 .red { background: #e74c3c; }
+.black { background: #1b1b1b; }
 
 .form-section {
   background: #f1f8f4;
@@ -298,6 +345,11 @@ form button:hover {
 
 /* Mobile: stack bulk bar items and make buttons full-width */
 @media (max-width: 575px) {
+  .app-header { grid-template-columns: 1fr; gap:8px; }
+  .header-left { justify-content:center; }
+  .header-right { justify-content:center; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid #e6efe9; }
   .bulk-actions {
     flex-direction: column;
     align-items: stretch;
@@ -316,4 +368,6 @@ form button:hover {
     flex: 1 1 100%;
   }
   .bulk-btn { white-space: normal; }
+
+  .app-logo {margin: 10px 8px 25px 8px;}
 }

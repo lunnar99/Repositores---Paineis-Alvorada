@@ -9,7 +9,328 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="/logo/LOGO ADM.png" type="image/png">
     <style>
-      
+
+
+
+        #deleteConfirmModal button:hover,
+        #successModal button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        #confirmDelete:hover {
+            background: #c0392b !important;
+        }
+
+        #cancelDelete:hover {
+            background: #7f8c8d !important;
+        }
+
+        #closeSuccess:hover {
+            background: #229954 !important;
+        }
+
+        /* Estilos modernos para o modal de filtros */
+        .modern-modal {
+            max-width: 480px;
+            width: 98%;
+            max-height: 95vh;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+            overflow: hidden;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #6b8c74, #5a7a63);
+            color: white;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+
+            max-height: 38vh;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 6px;
+
+        }
+
+        .section-header h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .selection-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .control-btn {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Botão Selecionar todas (verde, compacto) */
+        #selectAllStores.control-btn {
+            background: #27ae60;
+            color: #ffffff;
+            border-color: #1f8f4f;
+            padding: 4px 8px;
+            height: 10%;
+        }
+        #selectAllStores.control-btn:hover {
+            background: #229954;
+        }
+        #selectAllStores.control-btn.active {
+            background: #1e874b;
+            border-color: #1b7842;
+        }
+
+        .control-btn:hover {
+            background: #d5dbdb;
+            transform: translateY(-1px);
+        }
+
+        .stores-search {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .stores-search input {
+            width: 100%;
+            padding: 7px 7px 7px 28px;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .stores-search input:focus {
+            outline: none;
+            border-color: #6b8c74;
+            box-shadow: 0 0 0 3px rgba(107, 140, 116, 0.1);
+        }
+
+        .stores-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+            gap: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 5px;
+            background: #fafbfc;
+            border-radius: 6px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .store-item {
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-radius: 5px;
+            padding: 1px;
+            width: 38px;
+            height: 38px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            position: relative;
+            font-size: 10px;
+        }
+
+        .store-item:hover {
+            border-color: #6b8c74;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .store-item.selected {
+            background: linear-gradient(135deg, #6b8c74, #5a7a63);
+            color: white;
+            border-color: #6b8c74;
+            box-shadow: 0 4px 12px rgba(107, 140, 116, 0.3);
+        }
+
+        .store-item.selected::after {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .store-code {
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .selection-summary {
+            margin-top: 7px;
+            padding: 6px;
+            background: #e8f5e8;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 11px;
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .modal-footer {
+            background: #f8f9fa;
+            padding: 15px 6px;
+            display: flex;
+            width: 67%;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e9ecef;
+            gap: 20px;
+
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6b8c74, #5a7a63);
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-filtro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a7a63, #4a6a53);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(107, 140, 116, 0.3);
+        }
+
+        /* Scrollbar personalizada */
+        .stores-grid-modern::-webkit-scrollbar,
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .stores-grid-modern::-webkit-scrollbar-track,
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .stores-grid-modern::-webkit-scrollbar-thumb,
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #6b8c74;
+            border-radius: 3px;
+        }
+
+        .stores-grid-modern::-webkit-scrollbar-thumb:hover,
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #5a7a63;
+        }
     </style>
 </head>
 
@@ -23,10 +344,10 @@
             <h2>Adicionar Nova Tag</h2>
             <form id="tagForm">
                 <div class="form-group">
-                    <label for="img" >Imagem</label>
+                    <label for="img">Imagem</label>
                     <input type="file" id="img" accept="image/*" multiple required>
                     <small id="fileInfo" class="file-info" aria-live="polite"></small>
-    
+
                 </div>
 
                 <!-- Novo campo único de Período -->
@@ -51,20 +372,39 @@
                     <textarea id="comment" placeholder="(opcional)"></textarea>
                 </div>
 
-                <button id="openFilters" class="btn-filter" type="button"  style="margin-top: 20px;">
+                <button id="openFilters" class="btn-filter" type="button" style="margin-top: 20px;">
                     <i class="fa fa-filter"></i> Filtros
                 </button>
 
-                <div id="filtersModal" class="modal" >
-                    <div class="modal-content">
-                        <span id="closeFilters" class="close">&times;</span>
-                        <h2>Filtros</h2>
-                        <div class="filter-section">
-                            <h3>Lojas</h3>
-                            <div id="stores" class="stores-grid"></div>
+                <div id="filtersModal" class="modal" style="display: none;">
+                    <div class="modal-content modern-modal">
+                        <div class="header-filtro">
+                            <h2><i class="fa fa-filter"></i> Filtros de Lojas</h2>
+                            <span id="closeFilters" class="close-btn">&times;</span>
                         </div>
-                        <div style="margin-top: 15px; text-align: right;">
-                            <button id="applyFilters" class="btn-apply" type="button">Aplicar</button>
+                        <div class="modal-body">
+                            <div class="filter-section-2">
+                                <div class="section-header">
+                                    <h3><i class="fa fa-store"></i> Selecionar Lojas</h3>
+                                    <div class="selection-controls">
+                                        <button type="button" id="selectAllStores" class="control-btn">
+                                            <i class="fa fa-check-square"></i> Todas
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="stores" class="stores-grid-modern"></div>
+
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button id="clearFilters" class="btn-secondary" type="button">
+                                <i class="fa fa-undo"></i> Limpar Tudo
+                            </button>
+                            <button id="applyFilters" class="btn-primary" type="button">
+                                <i class="fa fa-check"></i> Aplicar Filtros
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -82,7 +422,8 @@
                 <i class="fa fa-filter"></i>
             </button>
             <!-- Busca rápida por dia (ex: 7 ou 07 a 10) -->
-            <input type="text" id="tagsQuickSearch" placeholder="Buscar por dia (ex: 7 ou 07 a 10)" style="margin-left:10px; padding:6px 10px; border:1px solid #6b8c74; border-radius:8px;">
+            <input type="text" id="tagsQuickSearch" placeholder="Buscar por dia (ex: 7 ou 07 a 10)"
+                style="margin-left:10px; padding:6px 10px; border:1px solid #6b8c74; border-radius:8px;">
         </section>
 
         <!-- Novo Modal de Filtro de Tags (por data e lojas) -->
@@ -102,7 +443,8 @@
                             <label for="filterEnd">Fim</label>
                             <input type="date" id="filterEnd">
                         </div>
-                        <small style="opacity:.8;">Preencha ambos para combinar início e fim; preencha só um para filtrar por aquele dia.</small>
+                        <small style="opacity:.8;">Preencha ambos para combinar início e fim; preencha só um para
+                            filtrar por aquele dia.</small>
                     </div>
                 </div>
 
@@ -112,7 +454,8 @@
                 </div>
 
                 <div style="margin-top: 15px; text-align: right;">
-                    <button id="clearTagsFilters" class="btn-apply" type="button" style="background:#6c757d;">Limpar</button>
+                    <button id="clearTagsFilters" class="btn-apply" type="button"
+                        style="background:#6c757d;">Limpar</button>
                     <button id="applyTagsFilters" class="btn-apply" type="button">Aplicar</button>
                 </div>
             </div>
@@ -126,10 +469,48 @@
         <div class="loader" role="status" aria-label="Carregando"></div>
     </div>
 
+    <!-- Modal de Confirmação de Remoção -->
+    <div id="deleteConfirmModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i class="fa-solid fa-trash-can" style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;"></i>
+                <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Remover Tag</h2>
+                <p style="margin: 0; color: #7f8c8d;">Tem certeza que deseja remover esta tag?</p>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: #95a5a6;">Ela ficará marcada como removida e
+                    aparecerá em "Retirar da Loja" para os usuários.</p>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="cancelDelete"
+                    style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    <i class="fa-solid fa-xmark"></i> Cancelar
+                </button>
+                <button id="confirmDelete"
+                    style="background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    <i class="fa-solid fa-trash-can"></i> Sim, Remover
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Sucesso -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 350px; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i class="fa-solid fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
+                <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Tag Removida!</h2>
+                <p style="margin: 0; color: #7f8c8d;">A tag foi marcada como removida com sucesso.</p>
+            </div>
+            <button id="closeSuccess"
+                style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                <i class="fa-solid fa-check"></i> OK
+            </button>
+        </div>
+    </div>
+
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
 
         const firebaseConfig = {
@@ -151,11 +532,11 @@
         window.collection = collection;
         window.doc = doc;
         window.addDoc = addDoc;
-    window.getDocs = getDocs;
+        window.getDocs = getDocs;
         window.deleteDoc = deleteDoc;
-    window.setDoc = setDoc;
-    window.query = query;
-    window.where = where;
+        window.setDoc = setDoc;
+        window.query = query;
+        window.where = where;
         window.ref = ref;
         window.uploadBytes = uploadBytes;
         window.getDownloadURL = getDownloadURL;
@@ -190,20 +571,20 @@
                 try {
                     localStorage.removeItem('role');
                     localStorage.removeItem('user');
-                } catch(_) {}
+                } catch (_) { }
                 window.location.href = 'index.html';
             });
         }
         createSessionBadge();
 
-        const lojas = ["AGU", "ARA", "ARS", "BAC", "BOT", "BUZ", "CF1", "CF2", "CAS",
-            "COL", "COP", "COR", "IGU", "INO", "ITA", "JC", "JE", "MAC",
-            "MG1", "MG2", "MAR", "NOV", "RB1", "RB2", "RDO", "SJI",
+        const lojas = ["AGM", "AR1", "AR2", "ARS", "BX1", "BX2", "BOT", "BZ1", "CF1", "CF2", "CAS",
+            "CLB", "CPC", "COR", "IGB", "INO", "ITB", "JDC", "JDE", "MC1", "MC2",
+            "MG1", "MG2", "MAR", "NCD", "RB1", "RB2", "RDO", "MRC",
             "SPD", "TAN", "TRI", "UNA"];
 
-    let tags = [];
-    const printedInfoCache = new Map(); // tagId -> [{role, printedAt}]
-    const attentionInfoCache = new Map(); // tagId -> Set(role)
+        let tags = [];
+        const printedInfoCache = new Map(); // tagId -> [{role, printedAt}]
+        const attentionInfoCache = new Map(); // tagId -> Set(role)
 
         // Novo estado de filtros da visualização
         const viewFilter = { start: null, end: null, stores: [] };
@@ -212,17 +593,60 @@
             const storesDiv = document.getElementById("stores");
             if (!storesDiv) return;
             storesDiv.innerHTML = "";
+
             lojas.forEach(loja => {
-                const label = document.createElement("label");
-                const cb = document.createElement("input");
-                cb.type = "checkbox";
-                cb.value = loja;
-                label.appendChild(cb);
-                label.appendChild(document.createTextNode(loja));
-                storesDiv.appendChild(label);
+                const storeItem = document.createElement("div");
+                storeItem.className = "store-item";
+                storeItem.dataset.store = loja;
+                storeItem.innerHTML = `<div class="store-code">${loja}</div>`;
+
+                // Verifica se está nos filtros salvos
+                const savedFilters = JSON.parse(localStorage.getItem("filtroLojas")) || [];
+                if (savedFilters.includes(loja)) {
+                    storeItem.classList.add("selected");
+                }
+
+                storeItem.addEventListener("click", () => {
+                    storeItem.classList.toggle("selected");
+                    updateSelectionCount();
+                });
+
+                storesDiv.appendChild(storeItem);
             });
+
+            updateSelectionCount();
         }
-        renderStores();
+
+        function updateSelectionCount() {
+            const selectedItems = document.querySelectorAll(".store-item.selected");
+            const totalItems = document.querySelectorAll(".store-item");
+            document.getElementById("selectedCount").textContent = selectedItems.length;
+            document.getElementById("totalStores").textContent = totalItems.length;
+
+            // Atualiza estado do botão Selecionar todas (ativo quando todas as visíveis estão selecionadas)
+            const selectAllBtn = document.getElementById("selectAllStores");
+            if (selectAllBtn) {
+                const visibleItems = Array.from(totalItems).filter(el => el.style.display !== "none");
+                const allVisibleSelected = visibleItems.length > 0 && visibleItems.every(el => el.classList.contains("selected"));
+                if (allVisibleSelected) selectAllBtn.classList.add("active");
+                else selectAllBtn.classList.remove("active");
+            }
+        }
+
+        function filterStores(searchTerm) {
+            const storeItems = document.querySelectorAll(".store-item");
+            storeItems.forEach(item => {
+                const storeName = item.dataset.store.toLowerCase();
+                if (storeName.includes(searchTerm.toLowerCase())) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+            updateSelectionCount();
+        }
+
+        // Inicializa o modal de filtros
 
         function getStatus(start, end) {
             const hoje = new Date();
@@ -259,8 +683,8 @@
             const da = parseToDate(a), db = parseToDate(b);
             if (!da || !db) return false;
             return da.getFullYear() === db.getFullYear() &&
-                   da.getMonth() === db.getMonth() &&
-                   da.getDate() === db.getDate();
+                da.getMonth() === db.getMonth() &&
+                da.getDate() === db.getDate();
         }
         // Normaliza para data somente (00:00 local)
         function dateOnly(d) {
@@ -438,17 +862,32 @@
         async function fetchTags() {
             const snapshot = await getDocs(collection(window.db, "tags"));
             const results = [];
+            const hoje = new Date();
+
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
                 const start = data.start?.toDate ? data.start.toDate() : data.start;
                 const end = data.end?.toDate ? data.end.toDate() : data.end;
+
+                // Verifica se a tag venceu há mais de 2 dias
+                const endDate = new Date(end);
+                const diffDays = Math.floor((hoje - endDate) / (1000 * 60 * 60 * 24));
+
+                // Se venceu há mais de 2 dias, marca para exclusão definitiva
+                if (diffDays > 2) {
+                    deleteDoc(doc(window.db, "tags", docSnap.id)).catch(console.warn);
+                    return; // Não adiciona à lista
+                }
+
                 results.push({
                     id: docSnap.id,
                     imgUrl: data.imgUrl,
                     start,
                     end,
                     comment: data.comment || "",
-                    roles: data.roles || ["ALL"]
+                    roles: data.roles || ["ALL"],
+                    deleted: data.deleted || false,
+                    deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt
                 });
             });
             console.log("Tags do Firebase:", results); // Conferir no console
@@ -507,7 +946,13 @@
 
                 const div = document.createElement("div");
                 div.className = "tag";
-                div.style.border = `3px solid ${status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c"}`;
+
+                // Se a tag está marcada como deletada, usa contorno preto
+                if (tag.deleted) {
+                    div.style.border = "3px solid #000000";
+                } else {
+                    div.style.border = `3px solid ${status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c"}`;
+                }
 
                 div.innerHTML = `
                     <input type="checkbox" class="tag-checkbox" data-index="${index}">
@@ -533,16 +978,95 @@
                     const idx = Number(e.currentTarget.dataset.index);
                     const tag = tags[idx];
                     if (!tag) return;
-                    if (!confirm("Deseja realmente deletar esta tag?")) return;
-                    await deleteTag(tag.id);
-                    tags.splice(idx, 1);
-                    renderTags();
+
+                    // Mostra o modal de confirmação
+                    showDeleteConfirmation(tag, idx);
                 });
             });
         }
 
+        // Função para mostrar o modal de confirmação de remoção
+        function showDeleteConfirmation(tag, index) {
+            const modal = document.getElementById('deleteConfirmModal');
+            modal.style.display = 'block';
+
+            // Remove listeners anteriores para evitar duplicação
+            const confirmBtn = document.getElementById('confirmDelete');
+            const cancelBtn = document.getElementById('cancelDelete');
+
+            // Clona os botões para remover todos os event listeners
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            // Adiciona novos listeners
+            newConfirmBtn.addEventListener('click', async () => {
+                modal.style.display = 'none';
+                try {
+                    await deleteTag(tag.id);
+                    // Remove da lista local
+                    tags.splice(index, 1);
+                    renderTags();
+                    showSuccessModal();
+                } catch (error) {
+                    console.error('Erro ao remover tag:', error);
+                    alert('Erro ao remover tag. Tente novamente.');
+                }
+            });
+
+            newCancelBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            // Fechar ao clicar fora do modal
+            const outsideClickHandler = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    modal.removeEventListener('click', outsideClickHandler);
+                }
+            };
+            modal.addEventListener('click', outsideClickHandler);
+        }
+
+        // Função para mostrar o modal de sucesso
+        function showSuccessModal() {
+            const modal = document.getElementById('successModal');
+            modal.style.display = 'block';
+
+            const closeBtn = document.getElementById('closeSuccess');
+
+            // Remove listener anterior se existir
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+
+            newCloseBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            // Fechar ao clicar fora do modal
+            const outsideClickHandler = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    modal.removeEventListener('click', outsideClickHandler);
+                }
+            };
+            modal.addEventListener('click', outsideClickHandler);
+
+            // Auto-fechar após 3 segundos
+            setTimeout(() => {
+                if (modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                }
+            }, 3000);
+        }
+
         async function deleteTag(id) {
-            await deleteDoc(doc(window.db, "tags", id));
+            // Ao invés de deletar, marca como 'deleted'
+            await setDoc(doc(window.db, "tags", id), {
+                deleted: true,
+                deletedAt: new Date()
+            }, { merge: true });
         }
 
         async function renderTagsFromServer() {
@@ -557,76 +1081,76 @@
         window.initADM = renderTagsFromServer;
 
         // ---------- Impressões por tag (consulta + cache) ----------
-        function parseDateLocalAny(d){
+        function parseDateLocalAny(d) {
             if (!d) return null;
             if (d.toDate) return d.toDate();
             const dt = new Date(d);
             return isNaN(dt.getTime()) ? null : dt;
         }
-        function pad2(n){ return String(n).padStart(2,'0'); }
-        function formatDateTimeBR(d){
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function formatDateTimeBR(d) {
             const date = parseDateLocalAny(d);
             if (!date) return '-';
-            return `${pad2(date.getDate())}/${pad2(date.getMonth()+1)} - ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+            return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)} - ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
         }
-        async function loadPrintedInfoForTag(tagId){
+        async function loadPrintedInfoForTag(tagId) {
             const key = String(tagId);
             if (printedInfoCache.has(key)) return printedInfoCache.get(key);
             try {
                 if (!window.db || !window.getDocs || !window.collection || !window.query || !window.where) return [];
-                const q = window.query(window.collection(window.db,'printedTags'), window.where('tagId','==', key));
+                const q = window.query(window.collection(window.db, 'printedTags'), window.where('tagId', '==', key));
                 const snap = await window.getDocs(q);
                 const arr = [];
-                snap.forEach(d=>{
+                snap.forEach(d => {
                     const data = d.data?.() || d.data();
-                    let roleCode = (data?.role || (typeof d.id==='string' && d.id.includes('__') ? d.id.split('__')[0] : '') || '').toUpperCase();
+                    let roleCode = (data?.role || (typeof d.id === 'string' && d.id.includes('__') ? d.id.split('__')[0] : '') || '').toUpperCase();
                     const printedAt = data?.printedAt?.toDate ? data.printedAt.toDate() : (data?.printedAt || null);
                     if (roleCode) arr.push({ role: roleCode, printedAt });
                 });
-                arr.sort((a,b)=>{
+                arr.sort((a, b) => {
                     const ta = a.printedAt ? new Date(a.printedAt).getTime() : 0;
                     const tb = b.printedAt ? new Date(b.printedAt).getTime() : 0;
                     return tb - ta;
                 });
                 printedInfoCache.set(key, arr);
                 return arr;
-            } catch(e){
+            } catch (e) {
                 return [];
             }
         }
 
         // ---------- Atenção por tag (consulta + toggle) ----------
-        async function loadAttentionForTag(tagId){
+        async function loadAttentionForTag(tagId) {
             const key = String(tagId);
             if (attentionInfoCache.has(key)) return attentionInfoCache.get(key);
             try {
-                const q = window.query(window.collection(window.db,'attentionTags'), window.where('tagId','==', key));
+                const q = window.query(window.collection(window.db, 'attentionTags'), window.where('tagId', '==', key));
                 const snap = await window.getDocs(q);
                 const set = new Set();
-                snap.forEach(d=>{
+                snap.forEach(d => {
                     const data = d.data?.() || d.data();
-                    const role = (data?.role || (typeof d.id==='string' && d.id.includes('__') ? d.id.split('__')[0] : '') || '').toUpperCase();
+                    const role = (data?.role || (typeof d.id === 'string' && d.id.includes('__') ? d.id.split('__')[0] : '') || '').toUpperCase();
                     const att = (data?.attention === undefined) ? true : !!data.attention;
                     if (role && att) set.add(role);
                 });
                 attentionInfoCache.set(key, set);
                 return set;
-            }catch(e){ return new Set(); }
+            } catch (e) { return new Set(); }
         }
-        async function setAttention(tagId, roleCode, on){
+        async function setAttention(tagId, roleCode, on) {
             const id = String(tagId);
             const roleLower = String(roleCode).toLowerCase();
             const docId = `${roleLower}__${id}`;
             if (on) {
-                await window.setDoc(window.doc(window.db,'attentionTags', docId), { role: roleLower, tagId: id, attention: true, attentionAt: new Date() }, { merge: true });
+                await window.setDoc(window.doc(window.db, 'attentionTags', docId), { role: roleLower, tagId: id, attention: true, attentionAt: new Date() }, { merge: true });
             } else {
-                try { await window.deleteDoc(window.doc(window.db,'attentionTags', docId)); } catch(_) {}
+                try { await window.deleteDoc(window.doc(window.db, 'attentionTags', docId)); } catch (_) { }
             }
             attentionInfoCache.delete(id);
         }
 
         // ---------- Modal de Impressões ----------
-        function ensurePrintedInfoModal(){
+        function ensurePrintedInfoModal() {
             let modal = document.getElementById('printedInfoModal');
             if (modal) return modal;
             modal = document.createElement('div');
@@ -639,11 +1163,11 @@
                 <div id="printedInfoContent" style="margin-top:10px; max-height:60vh; overflow:auto;"></div>
               </div>`;
             document.body.appendChild(modal);
-            document.getElementById('closePrintedInfo')?.addEventListener('click', ()=>{ modal.style.display='none'; });
-            modal.addEventListener('click', (e)=>{ if (e.target===modal) modal.style.display='none'; });
+            document.getElementById('closePrintedInfo')?.addEventListener('click', () => { modal.style.display = 'none'; });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
             return modal;
         }
-        async function openPrintedInfoModal(tag){
+        async function openPrintedInfoModal(tag) {
             const modal = ensurePrintedInfoModal();
             const content = modal.querySelector('#printedInfoContent');
             content.innerHTML = '<div style="opacity:.7;">Carregando...</div>';
@@ -653,17 +1177,17 @@
                 loadPrintedInfoForTag(tag.id),
                 loadAttentionForTag(tag.id)
             ]);
-            const printedMap = new Map(printedList.map(i=>[String(i.role).toUpperCase(), i]));
+            const printedMap = new Map(printedList.map(i => [String(i.role).toUpperCase(), i]));
 
-            const rows = lojas.map(code=>{
+            const rows = lojas.map(code => {
                 const role = String(code).toUpperCase();
                 const printed = printedMap.get(role);
                 const att = attentionSet.has(role);
                 const datePart = printed ? formatDateTimeBR(printed.printedAt) : '- | -';
                 const statusIcon = printed ? '<i class="fa-solid fa-circle-check" style="color:#27ae60"></i>'
-                                           : '<i class="fa-solid fa-circle-xmark" style="color:#e74c3c"></i>';
+                    : '<i class="fa-solid fa-circle-xmark" style="color:#e74c3c"></i>';
                 const attBtn = printed ? '' : `<button class="att-btn" data-role="${role}" style="margin-left:10px; border:none; background:transparent; cursor:pointer;">
-                                  <i class="fa-solid fa-circle-exclamation" style="color:${att?'#e67e22':'#bbb'}"></i>
+                                  <i class="fa-solid fa-circle-exclamation" style="color:${att ? '#e67e22' : '#bbb'}"></i>
                                 </button>`;
                 return `<div class="pi-row" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid #eee;">
                           <div style="display:flex; align-items:center; gap:10px;">
@@ -679,8 +1203,8 @@
             content.innerHTML = rows || '<div style="opacity:.7;">Sem lojas cadastradas.</div>';
 
             // Liga os botões de atenção
-            content.querySelectorAll('.att-btn')?.forEach(btn=>{
-                btn.addEventListener('click', async ()=>{
+            content.querySelectorAll('.att-btn')?.forEach(btn => {
+                btn.addEventListener('click', async () => {
                     const role = btn.getAttribute('data-role');
                     const isOn = attentionSet.has(role);
                     await setAttention(tag.id, role, !isOn);
@@ -787,20 +1311,88 @@
             });
         }
 
-        // Modal de filtros
+        // Modal de filtros modernizado
         const openFiltersBtn = document.getElementById("openFilters");
         const closeFiltersBtn = document.getElementById("closeFilters");
         const filtersModal = document.getElementById("filtersModal");
         const applyFiltersBtn = document.getElementById("applyFilters");
+        const clearFiltersBtn = document.getElementById("clearFilters");
+    const selectAllBtn = document.getElementById("selectAllStores");
+        const storeSearchInput = document.getElementById("storeSearch");
 
-        if (openFiltersBtn) openFiltersBtn.addEventListener("click", () => filtersModal.style.display = "block");
-        if (closeFiltersBtn) closeFiltersBtn.addEventListener("click", () => filtersModal.style.display = "none");
-        if (applyFiltersBtn) applyFiltersBtn.addEventListener("click", () => {
-            const selected = Array.from(document.querySelectorAll("#stores input:checked")).map(cb => cb.value);
-            localStorage.setItem("filtroLojas", JSON.stringify(selected));
-            filtersModal.style.display = "none";
-            renderTags();
+        // Abrir modal
+        if (openFiltersBtn) {
+            openFiltersBtn.addEventListener("click", () => {
+                filtersModal.style.display = "block";
+                renderStores(); // Re-renderiza para mostrar seleções atuais
+            });
+        }
+
+        // Fechar modal
+        if (closeFiltersBtn) {
+            closeFiltersBtn.addEventListener("click", () => {
+                filtersModal.style.display = "none";
+            });
+        }
+
+        // Fechar ao clicar fora
+        filtersModal?.addEventListener("click", (e) => {
+            if (e.target === filtersModal) {
+                filtersModal.style.display = "none";
+            }
         });
+
+        // Aplicar filtros
+        if (applyFiltersBtn) {
+            applyFiltersBtn.addEventListener("click", () => {
+                const selectedItems = document.querySelectorAll(".store-item.selected");
+                const selected = Array.from(selectedItems).map(item => item.dataset.store);
+                localStorage.setItem("filtroLojas", JSON.stringify(selected));
+                filtersModal.style.display = "none";
+                renderTags();
+
+                // Feedback visual
+                applyFiltersBtn.innerHTML = '<i class="fa fa-check"></i> Aplicado!';
+                setTimeout(() => {
+                    applyFiltersBtn.innerHTML = '<i class="fa fa-check"></i> Aplicar Filtros';
+                }, 1500);
+            });
+        }
+
+        // Limpar todos os filtros
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener("click", () => {
+                document.querySelectorAll(".store-item.selected").forEach(item => {
+                    item.classList.remove("selected");
+                });
+                updateSelectionCount();
+                localStorage.removeItem("filtroLojas");
+                renderTags();
+            });
+        }
+
+        // Toggle Selecionar todas / Limpar (em um único botão)
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener("click", () => {
+                const items = Array.from(document.querySelectorAll(".store-item")).filter(item => item.style.display !== "none");
+                const allSelected = items.length > 0 && items.every(item => item.classList.contains("selected"));
+                if (allSelected) {
+                    // Desmarca todas as visíveis
+                    items.forEach(item => item.classList.remove("selected"));
+                } else {
+                    // Marca todas as visíveis
+                    items.forEach(item => item.classList.add("selected"));
+                }
+                updateSelectionCount();
+            });
+        }
+
+        // Busca de lojas
+        if (storeSearchInput) {
+            storeSearchInput.addEventListener("input", (e) => {
+                filterStores(e.target.value);
+            });
+        }
 
         // -------------------- NOVO: Modal de filtros da listagem --------------------
         const openTagsFiltersBtn = document.getElementById("openFilters-tags");
@@ -912,6 +1504,9 @@
             tagsFilterModal.style.display = "none";
             renderTags();
         });
+
+        // Inicialização do modal de filtros modernizado
+        renderStores();
     </script>
 </body>
 

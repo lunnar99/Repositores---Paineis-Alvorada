@@ -10,50 +10,155 @@
     integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="icon" href="/logo/LOGO USER.png" type="image/png">
+    <script src="./assets/vendor/canvas-confetti/dist/confetti.browser.js"></script>
+    <style>
+      /* Estilos para os modais de confirmação */
+      #removeConfirmModal, #removeSuccessModal {
+        animation: modalFadeIn 0.3s ease-out;
+      }
+      
+      @keyframes modalFadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      
+      #removeConfirmModal button:hover,
+      #removeSuccessModal button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      }
+      
+      #confirmRemove:hover,
+      #closeRemoveSuccess:hover {
+        background: #229954 !important;
+      }
+      
+      #cancelRemove:hover {
+        background: #7f8c8d !important;
+      }
+
+      /* Estilo para o botão de retirada nas tags */
+      .remove-btn {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+        width: 100%;
+      }
+      
+      .remove-btn:hover {
+        background: #c0392b;
+        transform: translateY(-1px);
+      }
+    </style>
 </head>
 
 <body>
 
   <div class="container">
-    <header class="topbar">
-      <div class="searchbox">
-        <h2>Pesquisar</h2>
-        <input type="text" id="search" placeholder="Procurar por dia (ex: 7 ou 07)">
+    <!-- Header com logo, busca e login -->
+    <header class="app-header">
+      <div class="header-left">
+        <img src="logo/LOGO SM HORIZONTAL.png" alt="Supermarket" class="app-logo"/>
       </div>
-      <nav class="filters">
-        <button class="filter active" data-filter="all">Todas</button>
-        <button class="filter" data-filter="valid">Adicionar na Loja</button>
-        <button class="filter" data-filter="expired">Retirar da Loja</button>
-        <button class="filter" data-filter="printed">Impressas</button>
-        <div>
-          <button id="Recentes" class="filter">Adicionadas Hoje</button>
+      <div class="header-center">
+        <input type="text" id="search" class="search-input" placeholder="Buscar por dia (ex: 7 ou 07)" />
+      </div>
+      <div class="header-right">
+        <div class="store-info">
+          <span id="storeName">Loja</span>
+          <button type="button" id="logoutTop" class="logout-top">Sair</button>
         </div>
-      </nav>
-      <div class="counts">
-        <p><span class="dot green"></span> Válidos: <span id="countValid">0</span></p>
-        <p><span class="dot orange"></span> Logo Vence: <span id="countSoon">0</span></p>
-        <p><span class="dot red"></span> Vencidos: <span id="countExpired">0</span></p>
-        <p><b>Totais: <span id="countTotal">0</span></b></p>
       </div>
     </header>
-    <!-- Barra de ações em massa (aparece quando 2+ selecionadas) -->
-    <div id="bulkActions" class="bulk-actions" hidden>
-      <div class="bulk-left">
-        <input type="checkbox" id="selectAllVisible">
-        <label for="selectAllVisible">Selecionar visíveis</label>
-        <span class="sep">|</span>
-        <span class="sel-info"><span id="selectedCount">0</span> selecionadas</span>
+
+    <div class="layout">
+      <!-- Filtros laterais -->
+      <aside class="sidebar">
+        <nav class="side-nav">
+          <button class="filter active" data-filter="all"><i class="fa-solid fa-layer-group"></i><span>Todas</span></button>
+          <button class="filter" data-filter="valid"><i class="fa-solid fa-circle-check"></i><span>Adicionar na Loja</span></button>
+          <button class="filter" data-filter="expired"><i class="fa-solid fa-box-archive"></i><span>Retirar da Loja</span></button>
+          <button class="filter" data-filter="printed"><i class="fa-solid fa-print"></i><span>Impressas</span></button>
+          <button id="Recentes" class="filter"><i class="fa-solid fa-clock"></i><span>Adicionadas Hoje</span></button>
+        </nav>
+        <div class="side-divider"></div>
+      </aside>
+
+      <!-- Conteúdo principal -->
+      <section class="content">
+        <div class="counts">
+          <p><span class="dot green"></span> Válidos: <span id="countValid">0</span></p>
+          <p><span class="dot orange"></span> Logo Vence: <span id="countSoon">0</span></p>
+          <p><span class="dot red"></span> Vencidos: <span id="countExpired">0</span></p>
+          <p><b>Totais: <span id="countTotal">0</span></b></p>
+        </div>
+        <!-- Barra de ações em massa (aparece quando 2+ selecionadas) -->
+        <div id="bulkActions" class="bulk-actions" hidden>
+          <div class="bulk-left">
+            <input type="checkbox" id="selectAllVisible">
+            <label for="selectAllVisible">Selecionar visíveis</label>
+            <span class="sep">|</span>
+            <span class="sel-info"><span id="selectedCount">0</span> selecionadas</span>
+          </div>
+          <div class="bulk-right">
+            <button type="button" id="bulkDownload" class="bulk-btn">
+              <i class="fa-solid fa-print"></i> Baixar Selecionadas
+            </button>
+            <button type="button" id="bulkPrint" class="bulk-btn primary">
+              <i class="fa-solid fa-print"></i> Imprimir Selecionadas
+            </button>
+          </div>
+        </div>
+
+        <main class="tags-grid" id="tagsGrid"></main>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação de Retirada -->
+  <div id="removeConfirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <div style="margin-bottom: 20px;">
+        <i class="fa-solid fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
+        <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Confirmar Retirada</h2>
+        <p style="margin: 0; color: #7f8c8d;">Confirma que esta tag foi retirada da loja?</p>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #95a5a6;">Ela será removida da sua visualização.</p>
       </div>
-      <div class="bulk-right">
-        <button type="button" id="bulkDownload" class="bulk-btn">
-          <i class="fa-solid fa-print"></i> Baixar Selecionadas
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="cancelRemove" style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
+          <i class="fa-solid fa-xmark"></i> Cancelar
         </button>
-        <button type="button" id="bulkPrint" class="bulk-btn primary">
-          <i class="fa-solid fa-print"></i> Imprimir Selecionadas
+        <button id="confirmRemove" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
+          <i class="fa-solid fa-check"></i> Sim, Retirei
         </button>
       </div>
     </div>
-    <main class="tags-grid" id="tagsGrid"></main>
+  </div>
+
+  <!-- Modal de Sucesso da Retirada -->
+  <div id="removeSuccessModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 350px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <div style="margin-bottom: 20px;">
+        <i class="fa-solid fa-thumbs-up" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
+        <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Tag Retirada!</h2>
+        <p style="margin: 0; color: #7f8c8d;">A tag foi marcada como retirada com sucesso.</p>
+      </div>
+      <button id="closeRemoveSuccess" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
+        <i class="fa-solid fa-check"></i> OK
+      </button>
+    </div>
   </div>
 
   <!-- Firebase -->
@@ -99,30 +204,44 @@
     }
 
     // Widget fixo com identificação e logout
-    function createSessionBadge() {
-      if (document.getElementById("sessionBadge")) return; // evita duplicar
-      const badge = document.createElement("div");
-      badge.id = "sessionBadge";
-      badge.className = "session-badge";
-      const userLabel = (user || "sem-usuário");
-      const roleLabel = (role || "-");
-      badge.innerHTML = `
-                  <span class="id">${userLabel}</span>
-                  <span class="sep">•</span>
-                  <span class="flag">${roleLabel}</span>
-                  <button type="button" class="logout-btn" title="Sair">Sair</button>
-                `;
-      document.body.appendChild(badge);
-      badge.querySelector(".logout-btn")?.addEventListener("click", () => {
-        try {
-          localStorage.removeItem("role");
-          localStorage.removeItem("user");
-        } catch (_) { }
-        window.location.href = "index.html";
-      });
+    // function createSessionBadge() {
+    //   if (document.getElementById("sessionBadge")) return; // evita duplicar
+    //   const badge = document.createElement("div");
+    //   badge.id = "sessionBadge";
+    //   badge.className = "session-badge";
+    //   const userLabel = (user || "sem-usuário");
+    //   const roleLabel = (role || "-");
+    //   badge.innerHTML = `
+    //               <span class="id">${userLabel}</span>
+    //               <span class="sep">•</span>
+    //               <span class="flag">${roleLabel}</span>
+    //               <button type="button" class="logout-btn" title="Sair">Sair</button>
+    //             `;
+    //   document.body.appendChild(badge);
+    //   badge.querySelector(".logout-btn")?.addEventListener("click", () => {
+    //     try {
+    //       localStorage.removeItem("role");
+    //       localStorage.removeItem("user");
+    //     } catch (_) { }
+    //     window.location.href = "index.html";
+    //   });
+    // }
+    // // cria o badge se a sessão é válida (não ADM)
+    // if (role && role !== "ADM") createSessionBadge();
+
+    // Header: preenche loja logada e botão de sair
+    const storeEl = document.getElementById('storeName');
+    if (storeEl) {
+      // Mostra o nome da loja (role) ou usuário, nunca "Loja" genérico
+      storeEl.textContent = role || user || '';
     }
-    // cria o badge se a sessão é válida (não ADM)
-    if (role && role !== "ADM") createSessionBadge();
+    document.getElementById('logoutTop')?.addEventListener('click', () => {
+      try {
+        localStorage.removeItem('role');
+        localStorage.removeItem('user');
+      } catch (_) { }
+      window.location.href = 'index.html';
+    });
 
     let tags = [];
     let printedSet = new Set(); // ids impressos para a loja (role) atual
@@ -161,8 +280,23 @@
       }
       const snapshot = await window.getDocs(window.collection(window.db, "tags"));
       const results = [];
+      const hoje = new Date();
+      
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
+        const start = data.start?.toDate ? data.start.toDate() : data.start;
+        const end = data.end?.toDate ? data.end.toDate() : data.end;
+        
+        // Verifica se a tag venceu há mais de 2 dias
+        const endDate = new Date(end);
+        const diffDays = Math.floor((hoje - endDate) / (1000 * 60 * 60 * 24));
+        
+        // Se venceu há mais de 2 dias, marca para exclusão definitiva
+        if (diffDays > 2) {
+          window.deleteDoc(window.doc(window.db, "tags", docSnap.id)).catch(console.warn);
+          return; // Não adiciona à lista
+        }
+        
         results.push({
           id: docSnap.id,
           imgUrl: data.imgUrl,
@@ -170,7 +304,9 @@
           end: data.end?.toDate ? data.end.toDate() : data.end,
           comment: data.comment || "",
           roles: data.roles || ["ALL"],
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+          deleted: data.deleted || false,
+          deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt
         });
       });
       return results;
@@ -312,14 +448,23 @@
       tagsList.forEach(tag => {
         const status = getStatus(tag.start, tag.end);
         const isPrinted = printedSet?.has(String(tag.id));
+        const isDeleted = tag.deleted || false;
+        const isRemoved = removedTagsSet?.has(String(tag.id));
+
+        // Se a tag foi retirada por esta loja, não mostrar mais
+        if (isRemoved) return;
 
         // Filtro de visualização
         if (filter === 'printed') {
           if (!isPrinted) return;
         } else if (filter === 'valid') {
-          // "Adicionar na Loja": mostrar somente as NÃO impressas e não vencidas (inclui valid + soon)
+          // "Adicionar na Loja": NÃO mostrar tags deletadas, mostrar somente as NÃO impressas e não vencidas
+          if (isDeleted) return; // Tags deletadas nunca aparecem em "Adicionar na Loja"
           if (isPrinted) return;
           if (status === 'expired') return;
+        } else if (filter === 'expired') {
+          // "Retirar da Loja": mostrar vencidas OU deletadas
+          if (!isDeleted && status !== 'expired') return;
         } else {
           if (filter !== "all" && status !== filter) return;
         }
@@ -327,14 +472,28 @@
         const tagRoles = (tag.roles || []).map(r => r.toLowerCase());
         if (!tagRoles.includes("all") && !tagRoles.includes(userRole)) return;
 
-        if (status === "valid") countValid++;
-        else if (status === "soon") countSoon++;
-        else countExpired++;
+        // Contagem apenas para tags não deletadas
+        if (!isDeleted) {
+          if (status === "valid") countValid++;
+          else if (status === "soon") countSoon++;
+          else countExpired++;
+        }
 
         const div = document.createElement("div");
         div.className = "tag";
-        div.style.borderColor = status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c";
+        
+        // Define a cor da borda: preto para deletadas, cores normais para as outras
+        if (isDeleted) {
+          div.style.borderColor = "#000000";
+        } else {
+          div.style.borderColor = status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c";
+        }
+        
         if (!div.style.position) div.style.position = 'relative';
+        
+        // Verifica se deve mostrar botão de retirada (tags vencidas ou deletadas)
+        const shouldShowRemoveBtn = (status === 'expired' || isDeleted) && filter === 'expired';
+        
         div.innerHTML = `
                     <div class="tag-head">
                       <label class="select-row">
@@ -342,14 +501,16 @@
                       </label>
                       <div class="tag-actions">
                         ${attentionSet?.has(String(tag.id)) && !isPrinted ? `<span class="attention-indicator" title="Atenção desta tag" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#c92222;color:#fff;margin-top:4px;box-shadow:0 1px 3px rgba(0,0,0,0.25);"><i class='fa-solid fa-exclamation' style='font-size:14px;line-height:1;'></i></span>` : ``}
-                        <button type="button" class="action-btn download" title="Baixar" data-id="${tag.id}"><i class="fa-solid fa-circle-down"></i></button>
-                        <button type="button" class="action-btn print" title="Imprimir" data-id="${tag.id}"><i class="fa-solid fa-print"></i></button>
+                        <button type="button" class="action-btn download" title="${isDeleted ? 'Tag removida' : 'Baixar'}" data-id="${tag.id}" ${isDeleted ? 'disabled' : ''}><i class="fa-solid fa-circle-down"></i></button>
+                        <button type="button" class="action-btn print" title="${isDeleted ? 'Tag removida' : 'Imprimir'}" data-id="${tag.id}" ${isDeleted ? 'disabled' : ''}><i class="fa-solid fa-print"></i></button>
                       </div>
                     </div>
                     <img src="${tag.imgUrl || 'placeholder.png'}" alt="tag">
                     <small>${formatDate(tag.start)} a ${formatDate(tag.end)}</small>
                     <small>Lojas: ${((tag.roles || []).includes("ALL")) ? "Todas" : (tag.roles || []).join(", ")}</small>
                     ${tag.comment ? `<div class="comment-bubble"></div><div class="comment-text">${tag.comment}</div>` : ""}
+                    ${isDeleted ? `<div style="position:absolute;top:5px;right:5px;background:#000;color:#fff;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:bold;">REMOVIDA</div>` : ""}
+                    ${shouldShowRemoveBtn ? `<button type="button" class="remove-btn" data-id="${tag.id}"><i class="fa-solid fa-check"></i> Confirmar Retirada</button>` : ""}
                   `;
         grid.appendChild(div);
 
@@ -374,6 +535,14 @@
 
         // Botões individuais: apenas feedback visual por enquanto
         div.querySelector('.action-btn.download')?.addEventListener('click', async () => {
+          if (isDeleted) {
+            if (window.Swal) {
+              Swal.fire({ icon: 'warning', title: 'Download bloqueado', text: 'Esta tag foi removida e não pode ser baixada!' });
+            } else {
+              alert('Esta tag foi removida e não pode ser baixada!');
+            }
+            return;
+          }
           const status = window.getStatus(tag.start, tag.end);
           if (status === "expired") {
             if (window.Swal) {
@@ -404,6 +573,14 @@
 
         // Novo: imprimir = gerar PDF, baixar e abrir em nova guia
         div.querySelector('.action-btn.print')?.addEventListener('click', async () => {
+          if (isDeleted) {
+            if (window.Swal) {
+              Swal.fire({ icon: 'warning', title: 'Impressão bloqueada', text: 'Esta tag foi removida e não pode ser impressa!' });
+            } else {
+              alert('Esta tag foi removida e não pode ser impressa!');
+            }
+            return;
+          }
           const status = window.getStatus(tag.start, tag.end);
           if (status === "expired") {
             if (window.Swal) {
@@ -478,6 +655,11 @@
             }
           }
         });
+
+        // Botão de confirmar retirada
+        div.querySelector('.remove-btn')?.addEventListener('click', () => {
+          showRemoveConfirmation(tag.id);
+        });
       });
 
       document.getElementById("countValid").textContent = countValid;
@@ -489,10 +671,134 @@
       updateBulkBar();
       // Atualiza indicador de atenção no filtro "Adicionar na Loja"
       updateAttentionFilterDot();
+      // Atualiza indicador de tags deletadas no filtro "Retirar da Loja"
+      updateDeletedFilterDot();
     }
     // Expor getStatus e tags para outros scripts
     window.getStatus = getStatus;
     window.tags = tags;
+
+    // Variável para armazenar tags retiradas por esta loja
+    let removedTagsSet = new Set();
+
+    // Função para buscar tags retiradas para a role atual
+    async function fetchRemovedSetForRole() {
+      try {
+        if (!role) return new Set();
+        const r = role.toLowerCase();
+        const q = window.query(window.collection(window.db, 'removedTags'), window.where('role', '==', r));
+        const snap = await window.getDocs(q);
+        const set = new Set();
+        snap.forEach(d => {
+          const data = d.data?.() || d.data();
+          let id = data?.tagId;
+          if (!id && typeof d.id === 'string' && d.id.includes('__')) {
+            id = d.id.split('__')[1];
+          }
+          if (id !== undefined && id !== null) set.add(String(id));
+        });
+        return set;
+      } catch (err) {
+        console.warn('Falha ao buscar tags retiradas:', err);
+        return new Set();
+      }
+    }
+
+    // Função para marcar uma tag como retirada
+    async function markTagAsRemoved(tagId) {
+      try {
+        if (!role || !tagId) return;
+        const r = role.toLowerCase();
+        const idStr = String(tagId);
+        const docId = `${r}__${idStr}`;
+        await window.setDoc(window.doc(window.db, 'removedTags', docId), {
+          role: r,
+          tagId: idStr,
+          removedAt: (typeof window.serverTimestamp === 'function') ? window.serverTimestamp() : new Date()
+        }, { merge: true });
+        removedTagsSet.add(idStr);
+      } catch (err) {
+        console.warn('Falha ao marcar tag como retirada:', err);
+      }
+    }
+
+    // Função para mostrar o modal de confirmação de retirada
+    function showRemoveConfirmation(tagId) {
+      const modal = document.getElementById('removeConfirmModal');
+      modal.style.display = 'flex';
+      
+      const confirmBtn = document.getElementById('confirmRemove');
+      const cancelBtn = document.getElementById('cancelRemove');
+      
+      // Remove listeners anteriores
+      const newConfirmBtn = confirmBtn.cloneNode(true);
+      const newCancelBtn = cancelBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+      cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+      
+      // Adiciona novos listeners
+      newConfirmBtn.addEventListener('click', async () => {
+        modal.style.display = 'none';
+        try {
+          await markTagAsRemoved(tagId);
+          showRemoveSuccessModal();
+          // Re-renderiza para remover a tag da visualização
+          reRenderKeepingFilter();
+        } catch (error) {
+          console.error('Erro ao confirmar retirada:', error);
+          if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao confirmar retirada. Tente novamente.' });
+          } else {
+            alert('Erro ao confirmar retirada. Tente novamente.');
+          }
+        }
+      });
+      
+      newCancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+      
+      // Fechar ao clicar fora do modal
+      const outsideClickHandler = (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+          modal.removeEventListener('click', outsideClickHandler);
+        }
+      };
+      modal.addEventListener('click', outsideClickHandler);
+    }
+
+    // Função para mostrar o modal de sucesso
+    function showRemoveSuccessModal() {
+      const modal = document.getElementById('removeSuccessModal');
+      modal.style.display = 'flex';
+      
+      const closeBtn = document.getElementById('closeRemoveSuccess');
+      
+      // Remove listener anterior se existir
+      const newCloseBtn = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+      
+      newCloseBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+      
+      // Fechar ao clicar fora do modal
+      const outsideClickHandler = (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+          modal.removeEventListener('click', outsideClickHandler);
+        }
+      };
+      modal.addEventListener('click', outsideClickHandler);
+      
+      // Auto-fechar após 3 segundos
+      setTimeout(() => {
+        if (modal.style.display === 'flex') {
+          modal.style.display = 'none';
+        }
+      }, 3000);
+    }
 
 
     function updateBulkBar() {
@@ -547,32 +853,86 @@
       } catch (_) { /* silencioso */ }
     }
 
+    // Mostra uma bolinha preta no botão "Retirar da Loja" quando há tags deletadas ou vencidas não retiradas
+    function updateDeletedFilterDot() {
+      try {
+        const btn = document.querySelector('button.filter[data-filter="expired"]');
+        if (!btn) return;
+        btn.style.position = 'relative';
+        // remove dot anterior
+        btn.querySelector('.del-dot')?.remove();
+        const r = role?.toLowerCase();
+        if (!Array.isArray(tags)) return;
+        
+        // Verifica se há tags que deveriam aparecer em "Retirar da Loja" e não foram retiradas
+        const hasTagsToRemove = tags.some(t => {
+          const status = getStatus(t.start, t.end);
+          const isDeleted = t.deleted || false;
+          const isRemoved = removedTagsSet?.has(String(t.id));
+          
+          // Se já foi retirada, não conta
+          if (isRemoved) return false;
+          
+          // Verifica se é uma tag que deveria estar em "Retirar da Loja"
+          const shouldBeInExpired = isDeleted || status === 'expired';
+          if (!shouldBeInExpired) return false;
+          
+          // Verifica se é para esta loja
+          const tagRoles = (t.roles || []).map(x => String(x).toLowerCase());
+          if (!tagRoles.includes('all') && !tagRoles.includes(r)) return false;
+          
+          return true;
+        });
+        
+        if (hasTagsToRemove) {
+          const dot = document.createElement('span');
+          dot.className = 'del-dot';
+          Object.assign(dot.style, {
+            position: 'absolute',
+            top: '-4px',
+            right: '-4px',
+            width: '10px',
+            height: '10px',
+            background: '#000000',
+            borderRadius: '50%',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.25)'
+          });
+          dot.title = 'Há tags para retirar da loja';
+          btn.appendChild(dot);
+        }
+      } catch (_) { /* silencioso */ }
+    }
+
     async function init() {
       try {
-        const [tagsRes, printedRes, attentionRes] = await Promise.all([
+        const [tagsRes, printedRes, attentionRes, removedRes] = await Promise.all([
           fetchTags(),
           fetchPrintedSetForRole(),
-          fetchAttentionSetForRole()
+          fetchAttentionSetForRole(),
+          fetchRemovedSetForRole()
         ]);
         tags = tagsRes;
         window.tags = tags;
         printedSet = printedRes;
         attentionSet = attentionRes;
+        removedTagsSet = removedRes;
         reRenderKeepingFilter();
       } catch (err) {
         console.error('Falha ao carregar tags inicialmente:', err);
       }
       setInterval(async () => {
         try {
-          const [tagsRes, printedRes, attentionRes] = await Promise.all([
+          const [tagsRes, printedRes, attentionRes, removedRes] = await Promise.all([
             fetchTags(),
             fetchPrintedSetForRole(),
-            fetchAttentionSetForRole()
+            fetchAttentionSetForRole(),
+            fetchRemovedSetForRole()
           ]);
           tags = tagsRes;
           window.tags = tags;
           printedSet = printedRes;
           attentionSet = attentionRes;
+          removedTagsSet = removedRes;
           reRenderKeepingFilter();
         } catch (err) {
           console.warn('Falha ao atualizar tags:', err);
@@ -614,6 +974,21 @@
               await Swal.fire({ icon: 'warning', title: 'Nenhuma selecionada', text: 'Selecione ao menos uma tag para baixar.' });
             } else {
               alert('Selecione ao menos uma tag para baixar.');
+            }
+            return;
+          }
+          // Bloqueio se alguma selecionada for REMOVIDA
+          let hasRemovida = false;
+          for (const box of boxes) {
+            const id = box.getAttribute('data-id');
+            const tag = (window.tags || tags).find(t => String(t.id) === String(id));
+            if (tag && tag.deleted) { hasRemovida = true; break; }
+          }
+          if (hasRemovida) {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'error', title: 'Ação bloqueada', text: 'Uma ou mais tags selecionadas foram removidas e não podem ser baixadas.' });
+            } else {
+              alert('Uma ou mais tags selecionadas foram removidas e não podem ser baixadas.');
             }
             return;
           }
@@ -695,6 +1070,20 @@
               await Swal.fire({ icon: 'warning', title: 'Nenhuma selecionada', text: 'Selecione ao menos uma tag para imprimir.' });
             } else {
               alert('Selecione ao menos uma tag para imprimir.');
+            }
+            return;
+          }
+          // Bloqueio se alguma selecionada for REMOVIDA
+          let hasRemovida = false;
+          for (const id of selected) {
+            const tag = (window.tags || tags).find(t => String(t.id) === String(id));
+            if (tag && tag.deleted) { hasRemovida = true; break; }
+          }
+          if (hasRemovida) {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'error', title: 'Ação bloqueada', text: 'Uma ou mais tags selecionadas foram removidas e não podem ser impressas.' });
+            } else {
+              alert('Uma ou mais tags selecionadas foram removidas e não podem ser impressas.');
             }
             return;
           }
@@ -874,6 +1263,39 @@
       });
       renderTags("all", filtered);
     });
+
+    (function() {
+  const runConfetti = document.querySelector('#hs-run-on-click-run-confetti');
+  runConfetti.addEventListener('click', () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: {
+        y: 0.6
+      }
+    });
+  });
+})();
+
+function imprimirTags() {
+  // Lógica para imprimir todas as tags, exceto as vencidas
+  const todasTags = document.querySelectorAll('.tag'); // Supondo que as tags tenham a classe 'tag'
+  const tagsVencidas = [...todasTags].filter(tag => !tag.classList.contains('vencida')); // Filtra as tags vencidas
+
+  if (tagsVencidas.length > 0) {
+    // Lógica para imprimir as tags
+    // ...código de impressão...
+
+    // Executa o confete após imprimir todas as tags
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: {
+        y: 0.6
+      }
+    });
+  }
+}
   </script>
 </body>
 

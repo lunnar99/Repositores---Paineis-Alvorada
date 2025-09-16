@@ -2,29 +2,80 @@ function login() {
   const inputUser = document.getElementById('username').value.trim();
   const inputPass = document.getElementById('password').value.trim();
 
-  // Login especial do ADM
-  if (inputUser === "adm" && inputPass === "adm") {
-    localStorage.setItem("role", "ADM");
-    localStorage.setItem("user", "Administrador");
-    localStorage.setItem("loginTime", Date.now());
-    const go = () => { window.location.href = "ADM-painel.html"; };
+  // Função para aguardar o SweetAlert carregar
+  function waitForSwal(callback) {
     if (window.Swal) {
+      callback();
+    } else {
+      setTimeout(() => waitForSwal(callback), 100);
+    }
+  }
+
+  // Função para mostrar sucesso e redirecionar
+  function showSuccessAndRedirect(message, redirectUrl) {
+    waitForSwal(() => {
       Swal.fire({
         icon: 'success',
         title: 'Bem-vindo(a)!',
-        text: 'Carregando seu painel…',
+        text: message,
         timer: 2000,
         showConfirmButton: false,
         didOpen: (popup) => {
           popup.style.borderRadius = '12px';
         }
-      }).then(go);
-      setTimeout(go, 2100); // fallback se o then não disparar (timer autoclosed)
-    } else {
-      const overlay = document.getElementById('loginOverlay');
-      if (overlay) overlay.classList.add('show');
-      setTimeout(go, 2000);
-    }
+      }).then(() => {
+        window.location.href = redirectUrl;
+      });
+      // Fallback para garantir redirecionamento
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 2100);
+    });
+  }
+
+  // Mapeamento das lojas para as novas siglas (baseado no usuarios.txt)
+  const lojaMapping = {
+    'aguamineral': 'AGM',
+    'araruama1': 'AR1', 
+    'araruama2': 'AR2',
+    'arsenal': 'ARS',
+    'bacaxa1': 'BX1',
+    'bacaxa2': 'BX2', 
+    'botafogo': 'BOT',
+    'buzios': 'BZ1',
+    'cabofrio1': 'CF1',
+    'cabofrio2': 'CF2',
+    'casimirodeabreu': 'CAS',
+    'colubande': 'CLB',
+    'copacabana': 'CPC',
+    'cordeirinho': 'COR',
+    'iguaba': 'IGB',
+    'inoa': 'INO',
+    'itaborai': 'ITB',
+    'jardimcatarina': 'JDC',
+    'jardimesperanca': 'JDE',
+    'macae1': 'MC1',
+    'macae2': 'MC2',
+    'mage1': 'MG1',
+    'mage2': 'MG2',
+    'saojosedoimbassai': 'MAR',
+    'novacidade': 'NCD',
+    'riobonito1': 'RB1',
+    'riobonito2': 'RB2',
+    'riodoouro': 'RDO',
+    'maracana': 'MRC',
+    'saopedrodaaldeia': 'SPD',
+    'tangua': 'TAN',
+    'trindade': 'TRI',
+    'unamar': 'UNA'
+  };
+
+  // Login especial do ADM
+  if (inputUser === "admgrpalvorada" && inputPass === "adm102030") {
+    localStorage.setItem("role", "ADM");
+    localStorage.setItem("user", "Administrador");
+    localStorage.setItem("loginTime", Date.now());
+      showSuccessAndRedirect('Carregando seu painel administrativo…', 'ADM-painel.html');
     return;
   }
 
@@ -39,9 +90,12 @@ function login() {
       const valido = usuarios.some(line => {
         const [user, pass] = line.trim().split(':');
         if (user === inputUser && pass === inputPass) {
-          role = pass.substring(0, 3); // BUZ, ARA, etc
-          userName = user;
-          return true;
+          // Verifica se é uma loja válida
+          if (lojaMapping[user]) {
+            role = lojaMapping[user]; // Usa a sigla mapeada
+            userName = user;
+            return true;
+          }
         }
         return false;
       });
@@ -50,30 +104,27 @@ function login() {
         localStorage.setItem("role", role);
         localStorage.setItem("user", userName);
         localStorage.setItem("loginTime", Date.now());
-        const go = () => { window.location.href = "main.html"; };
-        if (window.Swal) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Bem-vindo(a)!',
-            text: 'Carregando seu painel…',
-            timer: 2000,
-            showConfirmButton: false,
-            didOpen: (popup) => {
-              popup.style.borderRadius = '12px';
-            }
-          }).then(go);
-          setTimeout(go, 2100);
-        } else {
-          const overlay = document.getElementById('loginOverlay');
-          if (overlay) overlay.classList.add('show');
-          setTimeout(go, 2000);
-        }
+          showSuccessAndRedirect('Carregando seu painel…', 'main.html');
       } else {
         alert("Usuário ou senha inválidos");
       }
     })
     .catch(() => alert("Erro ao carregar usuários"));
 }
+
+// Permitir Enter para enviar o formulário e evitar duplo disparo
+window.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('loginForm');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      login();
+    });
+  }
+  // foco inicial para agilizar o login
+  const userInput = document.getElementById('username');
+  if (userInput) userInput.focus();
+});
 
 // Permitir Enter para enviar o formulário e evitar duplo disparo
 window.addEventListener('DOMContentLoaded', () => {
