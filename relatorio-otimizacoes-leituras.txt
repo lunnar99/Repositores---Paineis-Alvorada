@@ -1,0 +1,46 @@
+Relatório de Otimizações para Reduzir Leituras no Firestore
+
+Data: 2025-09-18
+Arquivo alterado: main.html
+
+Resumo
+- Removido polling automático (a cada 10s) e substituído por atualização manual (botão "Atualizar").
+- Consultas agora filtram por loja (roles) e por janelas de tempo:
+  * Ativas/recentes: end >= hoje-2 dias
+  * Vencidas recentes: end < hoje e end >= hoje-30 dias
+  * Deletadas: deleted == true
+- Estados (impressas, retiradas, atenção) passaram a usar doc agregado único por loja (storeState/{role}) quando disponível.
+- Fallback eficiente: se o doc agregado não existir, busca estados somente para IDs visíveis, em blocos de 10 (where tagId in [...]).
+- Removida a deleção automática de tags no cliente (limpeza deve ser feita por rotina/Cloud Function).
+
+Mudanças técnicas principais
+1) UI
+   - Adicionado botão #refreshBtn ao header para atualização manual.
+
+2) Firestore (leituras)
+   - Substituído getDocs da coleção inteira "tags" por três queries filtradas:
+     roles array-contains-any [ROLE, 'ALL'] + filtros de data/deleção.
+   - Leituras de estados unificadas via 1 getDoc em storeState/{role}.
+   - Sem onSnapshot e sem setInterval.
+
+3) Firestore (gravações)
+   - Ao marcar impressas/retiradas, além de printedTags/removedTags, atualiza storeState/{role} via arrayUnion para manter o agregado atualizado.
+
+4) Compatibilidade
+   - Se storeState/{role} não existir, o sistema continua funcional usando as coleções originais (printedTags, attentionTags, removedTags) com consultas restritas a IDs visíveis.
+
+Índices recomendados (Firestore)
+- tags: roles array-contains-any + end
+- tags: roles array-contains-any + deleted == true
+- attentionTags/printedTags/removedTags (opcional, para histórico com data): role == + <timestamp>
+
+Impacto estimado nas leituras
+- Antes: varredura a cada 10s por painel, multiplicando leituras por 33 painéis.
+- Depois: leituras apenas quando o usuário clicar em Atualizar (ou no carregamento).
+- Por sessão breve do repositor: ~2–4 queries de tags (filtradas) + 1 leitura do doc agregado (ou ~2–3 consultas de estados no fallback).
+- Com acessos esporádicos, a meta de < 100k leituras/mês torna-se atingível.
+
+Próximos passos sugeridos
+- Criar os índices compostos indicados no console do Firestore.
+- (Opcional) Habilitar TTL e/ou rotina de limpeza para printedTags/removedTags/attentionTags.
+- (Opcional) Cloud Function para limpar tags expiradas > 30 dias, removendo a necessidade de qualquer limpeza no cliente.

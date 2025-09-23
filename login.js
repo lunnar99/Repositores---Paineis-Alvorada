@@ -71,7 +71,7 @@ function login() {
   };
 
   // Login especial do ADM
-  if (inputUser === "admgrpalvorada" && inputPass === "adm102030") {
+  if (inputUser === "adm" && inputPass === "adm") {
     localStorage.setItem("role", "ADM");
     localStorage.setItem("user", "Administrador");
     localStorage.setItem("loginTime", Date.now());

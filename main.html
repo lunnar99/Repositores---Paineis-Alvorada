@@ -10,7 +10,6 @@
     integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="icon" href="/logo/LOGO USER.png" type="image/png">
-    <script src="./assets/vendor/canvas-confetti/dist/confetti.browser.js"></script>
     <style>
       /* Estilos para os modais de confirmação */
       #removeConfirmModal, #removeSuccessModal {
@@ -78,6 +77,7 @@
       <div class="header-right">
         <div class="store-info">
           <span id="storeName">Loja</span>
+          <button type="button" id="refreshBtn" class="logout-top" style="margin-right:8px; display: flex; flex-direction: row; align-items: center; gap: 5px;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
           <button type="button" id="logoutTop" class="logout-top">Sair</button>
         </div>
       </div>
@@ -91,7 +91,7 @@
           <button class="filter" data-filter="valid"><i class="fa-solid fa-circle-check"></i><span>Adicionar na Loja</span></button>
           <button class="filter" data-filter="expired"><i class="fa-solid fa-box-archive"></i><span>Retirar da Loja</span></button>
           <button class="filter" data-filter="printed"><i class="fa-solid fa-print"></i><span>Impressas</span></button>
-          <button id="Recentes" class="filter"><i class="fa-solid fa-clock"></i><span>Adicionadas Hoje</span></button>
+  
         </nav>
         <div class="side-divider"></div>
       </aside>
@@ -168,7 +168,7 @@
   <script src="jspdf-loader.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp, query, where, deleteDoc, getDoc, updateDoc, arrayUnion, enableIndexedDbPersistence, or, and } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAjzds2ts_R2gqgN2x0p80xq20-6QSAkjY",
@@ -182,6 +182,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    // Habilita persistência offline (cache IndexedDB); ignora erro em multi-aba
+    try { enableIndexedDbPersistence(db).catch(() => {}); } catch (_) {}
     window.db = db;
     window.collection = collection;
     window.getDocs = getDocs;
@@ -191,6 +193,12 @@
     window.serverTimestamp = serverTimestamp;
     window.query = query;
     window.where = where;
+    window.getDoc = getDoc;
+    window.updateDoc = updateDoc;
+    window.arrayUnion = arrayUnion;
+    // expõe combinadores para uso no segundo script
+    window._or = or;
+    window._and = and;
   </script>
 
   <!-- Script do Usuário -->
@@ -248,6 +256,56 @@
     let attentionSet = new Set(); // ids marcados com atenção para a loja (role) atual
     const selectedTags = new Set(); // ids selecionados
 
+    // Mapa de role (slug) -> código de loja usado nas tags (conforme padrão do ADM)
+    // Adapte conforme necessário se surgirem novas lojas/códigos
+    const ROLE_TO_CODE = {
+      aguamineral: 'AGM',
+      araruama1: 'AR1',
+      araruama2: 'AR2',
+      arsenal: 'ARS',
+      bacaxa1: 'BX1',
+      bacaxa2: 'BX2',
+      botafogo: 'BOT',
+      buzios: 'BZ1',
+      cabofrio1: 'CF1',
+      cabofrio2: 'CF2',
+      casimirodeabreu: 'CAS',
+      colubande: 'CLB',
+      copacabana: 'CPC',
+      cordeirinho: 'COR',
+      iguaba: 'IGB',
+      inoa: 'INO',
+      itaborai: 'ITB',
+      jardimcatarina: 'JDC',
+      jardimesperanca: 'JDE',
+      macae1: 'MC1',
+      macae2: 'MC2',
+      mage1: 'MG1',
+      mage2: 'MG2',
+      saojosedoimbassai: 'MAR',
+      novacidade: 'NCD',
+      riobonito1: 'RB1',
+      riobonito2: 'RB2',
+      riodoouro: 'RDO',
+      maracana: 'MRC',
+      // Extras presentes no ADM (nomes prováveis dos roles):
+      saopedrodaaldeia: 'SPD',
+      tangua: 'TAN',
+      trindade: 'TRI',
+      unamar: 'UNA'
+    };
+
+    function resolveRoleOptions(r) {
+      const raw = (r || '').trim();
+      const low = raw.toLowerCase();
+      const up = raw.toUpperCase();
+      const code = ROLE_TO_CODE[low];
+      const codeLow = code ? code.toLowerCase() : undefined;
+      const opts = new Set([raw, low, up, 'ALL', 'all']);
+      if (code) { opts.add(code); opts.add(codeLow); }
+      return Array.from(opts);
+    }
+
     function parseDateLocal(dateStr) {
       if (!dateStr) return null;
       const date = dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
@@ -273,39 +331,87 @@
       return "valid";
     }
 
+    // Utilidades de data para filtros de consulta
+    function startOfToday() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+    function daysAgo(n) { const d = startOfToday(); d.setDate(d.getDate() - n); return d; }
+    function startOfMonth() { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; }
+
     async function fetchTags() {
       if (!window.db || !window.getDocs || !window.collection) {
         console.error('Firebase não inicializado corretamente.');
         return [];
       }
-      const snapshot = await window.getDocs(window.collection(window.db, "tags"));
+      const rRaw = (role || '').trim();
+      if (!rRaw) return [];
+      // Usa variações + código de loja (ex.: araruama1 -> AR1)
+      const roleOptions = resolveRoleOptions(rRaw);
+      const today = startOfToday();
+      const twoDaysAgo = daysAgo(2);
+      const thirtyDaysAgo = daysAgo(30);
+
+      try {
+        // Consulta única com OR combinando as três condições
+        const q = window.query(
+          window.collection(window.db, 'tags'),
+          window.where('roles', 'array-contains-any', roleOptions),
+          window._or(
+            window.where('end', '>=', twoDaysAgo),
+            window._and(
+              window.where('end', '<', today),
+              window.where('end', '>=', thirtyDaysAgo)
+            ),
+            window.where('deleted', '==', true)
+          )
+        );
+        const snap = await window.getDocs(q);
+        const arr = [];
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          arr.push({
+            id: docSnap.id,
+            imgUrl: data.imgUrl,
+            start: data.start?.toDate ? data.start.toDate() : data.start,
+            end: data.end?.toDate ? data.end.toDate() : data.end,
+            comment: data.comment || "",
+            roles: data.roles || ["ALL"],
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+            deleted: !!data.deleted,
+            deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt
+          });
+        });
+        if (arr.length > 0) return arr;
+      } catch (e) {
+        console.warn('Consulta com OR falhou, usando fallback:', e);
+      }
+
+      // Fallback: carrega toda a coleção e filtra no cliente por role e janela de datas
+      // (usado em ambientes sem índices ou com docs antigos sem campo roles)
+      const snapAll = await window.getDocs(window.collection(window.db, 'tags'));
       const results = [];
-      const hoje = new Date();
-      
-      snapshot.forEach(docSnap => {
+      const rLow = rRaw.toLowerCase();
+      const rCode = ROLE_TO_CODE[rLow];
+      snapAll.forEach(docSnap => {
         const data = docSnap.data();
         const start = data.start?.toDate ? data.start.toDate() : data.start;
         const end = data.end?.toDate ? data.end.toDate() : data.end;
-        
-        // Verifica se a tag venceu há mais de 2 dias
-        const endDate = new Date(end);
-        const diffDays = Math.floor((hoje - endDate) / (1000 * 60 * 60 * 24));
-        
-        // Se venceu há mais de 2 dias, marca para exclusão definitiva
-        if (diffDays > 2) {
-          window.deleteDoc(window.doc(window.db, "tags", docSnap.id)).catch(console.warn);
-          return; // Não adiciona à lista
-        }
-        
+        const roles = Array.isArray(data.roles) ? data.roles.map(v => String(v).toLowerCase()) : ['all'];
+        const includeRole = roles.includes('all') || roles.includes(rLow) || (rCode ? roles.includes(rCode.toLowerCase()) : false);
+        if (!includeRole) return;
+        // aplica mesma lógica de janelas
+        const endDate = end instanceof Date ? end : new Date(end);
+        const isActive = endDate >= twoDaysAgo;
+        const isExpiredRecent = endDate < today && endDate >= thirtyDaysAgo;
+        const isDeleted = !!data.deleted;
+        if (!(isActive || isExpiredRecent || isDeleted)) return;
         results.push({
           id: docSnap.id,
           imgUrl: data.imgUrl,
-          start: data.start?.toDate ? data.start.toDate() : data.start,
-          end: data.end?.toDate ? data.end.toDate() : data.end,
+          start,
+          end,
           comment: data.comment || "",
           roles: data.roles || ["ALL"],
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
-          deleted: data.deleted || false,
+          deleted: !!data.deleted,
           deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt
         });
       });
@@ -389,6 +495,8 @@
           } catch (e) { /* ignora erro individual, tenta continuar */ }
         });
         await Promise.all(promises);
+        // Atualiza doc agregado em lote (minimiza leituras futuras)
+        await mergeIntoStoreState({ addPrinted: ids });
         // Re-renderiza para refletir remoção em "Adicionar na Loja"
         reRenderKeepingFilter();
         updateBulkBar();
@@ -443,7 +551,8 @@
       const grid = document.getElementById("tagsGrid");
       grid.innerHTML = "";
       let countValid = 0, countSoon = 0, countExpired = 0;
-      const userRole = role?.toLowerCase(); // corrigido: usar a role da sessão
+  const userRole = role?.toLowerCase(); // corrigido: usar a role da sessão
+  const roleOptsLow = new Set(resolveRoleOptions(role).map(v => String(v).toLowerCase()));
 
       tagsList.forEach(tag => {
         const status = getStatus(tag.start, tag.end);
@@ -469,8 +578,9 @@
           if (filter !== "all" && status !== filter) return;
         }
 
-        const tagRoles = (tag.roles || []).map(r => r.toLowerCase());
-        if (!tagRoles.includes("all") && !tagRoles.includes(userRole)) return;
+  const tagRoles = (tag.roles || []).map(r => String(r).toLowerCase());
+  const matchThisStore = tagRoles.some(tr => roleOptsLow.has(tr));
+  if (!matchThisStore) return;
 
         // Contagem apenas para tags não deletadas
         if (!isDeleted) {
@@ -717,9 +827,117 @@
           removedAt: (typeof window.serverTimestamp === 'function') ? window.serverTimestamp() : new Date()
         }, { merge: true });
         removedTagsSet.add(idStr);
+        // Atualiza doc agregado (minimiza leituras futuras)
+        await mergeIntoStoreState({ addRemoved: [idStr] });
       } catch (err) {
         console.warn('Falha ao marcar tag como retirada:', err);
       }
+    }
+
+    // -------- Estados agregados por loja (1 leitura) --------
+    async function fetchRoleStatesAggregated() {
+      if (!role) return null;
+      try {
+        const r = role.toLowerCase();
+        const ref = window.doc(window.db, 'storeState', r);
+        const ds = await window.getDoc(ref);
+        if (!ds.exists()) return null;
+        const data = ds.data();
+        const printedIds = Array.isArray(data.printedIds) ? data.printedIds : [];
+        const removedIds = Array.isArray(data.removedIds) ? data.removedIds : [];
+        const attentionIds = Array.isArray(data.attentionIds) ? data.attentionIds : [];
+        return {
+          printedSet: new Set(printedIds.map(String)),
+          removedSet: new Set(removedIds.map(String)),
+          attentionSet: new Set(attentionIds.map(String)),
+        };
+      } catch (_) { return null; }
+    }
+
+    async function mergeIntoStoreState(updates) {
+      if (!role) return;
+      const r = role.toLowerCase();
+      const ref = window.doc(window.db, 'storeState', r);
+      try {
+        await window.setDoc(ref, { updatedAt: (typeof window.serverTimestamp === 'function') ? window.serverTimestamp() : new Date() }, { merge: true });
+        const payload = {};
+        if (updates.addPrinted?.length) payload.printedIds = window.arrayUnion(...updates.addPrinted.map(String));
+        if (updates.addRemoved?.length) payload.removedIds = window.arrayUnion(...updates.addRemoved.map(String));
+        if (updates.addAttention?.length) payload.attentionIds = window.arrayUnion(...updates.addAttention.map(String));
+        if (Object.keys(payload).length) await window.updateDoc(ref, payload);
+      } catch (_) { /* silencioso */ }
+    }
+
+    // -------- Fallback eficiente por IDs visíveis (sem varrer coleção inteira) --------
+    function chunk(arr, size) { const out = []; for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i+size)); return out; }
+    async function fetchSetByTagIds(col, ids) {
+      if (!ids || !ids.length) return new Set();
+      const r = role?.toLowerCase();
+      const set = new Set();
+      for (const group of chunk(ids, 10)) {
+        const q = window.query(
+          window.collection(window.db, col),
+          window.where('role', '==', r),
+          window.where('tagId', 'in', group)
+        );
+        const snap = await window.getDocs(q);
+        snap.forEach(d => {
+          const data = d.data?.() || d.data();
+          const id = String(data?.tagId ?? (d.id.includes('__') ? d.id.split('__')[1] : ''));
+          if (id) set.add(id);
+        });
+      }
+      return set;
+    }
+
+    // Cooldown + dedup de requisições de atualização
+    let reloadInFlight = null;
+    let lastReloadAt = 0;
+    const MIN_RELOAD_INTERVAL = 15000; // 15s
+
+    async function reloadAll() {
+      if (reloadInFlight) return reloadInFlight;
+      const now = Date.now();
+      if (now - lastReloadAt < MIN_RELOAD_INTERVAL) {
+        if (window.Swal) {
+          Swal.fire({ toast: true, position: 'top', timer: 1400, showConfirmButton: false, icon: 'info', title: 'Já atualizado há pouco' });
+        }
+        return;
+      }
+
+      const btn = document.getElementById('refreshBtn');
+      const original = btn ? btn.innerHTML : '';
+      reloadInFlight = (async () => {
+        try {
+          if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...'; }
+          const [tagsRes, aggStates] = await Promise.all([
+            fetchTags(),
+            fetchRoleStatesAggregated()
+          ]);
+          tags = tagsRes; window.tags = tags;
+          if (aggStates) {
+            printedSet = aggStates.printedSet;
+            attentionSet = aggStates.attentionSet;
+            removedTagsSet = aggStates.removedSet;
+          } else {
+            const visibleIds = (tags || []).map(t => String(t.id));
+            const [pSet, aSet, rSet] = await Promise.all([
+              fetchSetByTagIds('printedTags', visibleIds),
+              fetchSetByTagIds('attentionTags', visibleIds),
+              fetchSetByTagIds('removedTags', visibleIds),
+            ]);
+            printedSet = pSet; attentionSet = aSet; removedTagsSet = rSet;
+          }
+          reRenderKeepingFilter();
+          lastReloadAt = Date.now();
+        } catch (err) {
+          console.error('Falha ao atualizar:', err);
+        } finally {
+          if (btn) { btn.disabled = false; btn.innerHTML = original || 'Atualizar'; }
+        }
+      })();
+
+      try { await reloadInFlight; } finally { reloadInFlight = null; }
     }
 
     // Função para mostrar o modal de confirmação de retirada
@@ -905,39 +1123,10 @@
 
     async function init() {
       try {
-        const [tagsRes, printedRes, attentionRes, removedRes] = await Promise.all([
-          fetchTags(),
-          fetchPrintedSetForRole(),
-          fetchAttentionSetForRole(),
-          fetchRemovedSetForRole()
-        ]);
-        tags = tagsRes;
-        window.tags = tags;
-        printedSet = printedRes;
-        attentionSet = attentionRes;
-        removedTagsSet = removedRes;
-        reRenderKeepingFilter();
+        await reloadAll();
       } catch (err) {
         console.error('Falha ao carregar tags inicialmente:', err);
       }
-      setInterval(async () => {
-        try {
-          const [tagsRes, printedRes, attentionRes, removedRes] = await Promise.all([
-            fetchTags(),
-            fetchPrintedSetForRole(),
-            fetchAttentionSetForRole(),
-            fetchRemovedSetForRole()
-          ]);
-          tags = tagsRes;
-          window.tags = tags;
-          printedSet = printedRes;
-          attentionSet = attentionRes;
-          removedTagsSet = removedRes;
-          reRenderKeepingFilter();
-        } catch (err) {
-          console.warn('Falha ao atualizar tags:', err);
-        }
-      }, 10000);
 
       // Selecionar visíveis (toggle)
       document.getElementById('selectAllVisible')?.addEventListener('change', (e) => {
@@ -951,6 +1140,8 @@
         });
         updateBulkBar();
       });
+      // Botão Atualizar (sem polling)
+      document.getElementById('refreshBtn')?.addEventListener('click', reloadAll);
     }
     init();
 
@@ -1264,19 +1455,6 @@
       renderTags("all", filtered);
     });
 
-    (function() {
-  const runConfetti = document.querySelector('#hs-run-on-click-run-confetti');
-  runConfetti.addEventListener('click', () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: {
-        y: 0.6
-      }
-    });
-  });
-})();
-
 function imprimirTags() {
   // Lógica para imprimir todas as tags, exceto as vencidas
   const todasTags = document.querySelectorAll('.tag'); // Supondo que as tags tenham a classe 'tag'
@@ -1286,14 +1464,6 @@ function imprimirTags() {
     // Lógica para imprimir as tags
     // ...código de impressão...
 
-    // Executa o confete após imprimir todas as tags
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: {
-        y: 0.6
-      }
-    });
   }
 }
   </script>
