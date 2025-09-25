@@ -1235,7 +1235,7 @@
       registerBulkDownloadListener();
     }
 
-    // Registro do botão "Imprimir Selecionadas": gera PDF com uma por página, baixa e abre em nova aba
+    // Registro do botão "Imprimir Selecionadas": gera PDFs em lotes para evitar estouro de memória
     function registerBulkPrintListener() {
       const btn = document.getElementById('bulkPrint');
       if (!btn) return;
@@ -1253,7 +1253,7 @@
         }
         const original = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando PDF...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparando...';
         try {
           const selected = Array.from(selectedTags);
           if (!selected.length) {
@@ -1278,49 +1278,88 @@
             }
             return;
           }
-          let pdf = null;
-          let anyAdded = false;
-          const successIds = [];
-          for (let i = 0; i < selected.length; i++) {
-            const id = selected[i];
+
+          // Apenas válidas (não expiradas) para impressão
+          const validIds = selected.filter(id => {
             const tag = (window.tags || []).find(t => String(t.id) === String(id));
-            if (!tag) continue;
+            if (!tag) return false;
             const status = window.getStatus(tag.start, tag.end);
-            if (status === 'expired') continue;
-            try {
-              const resp = await fetch(tag.imgUrl, { cache: 'no-store' });
-              const blob = await resp.blob();
-              const dataUrl = await new Promise((resolve, reject) => {
-                const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob);
-              });
-              const img = await new Promise((resolve) => { const im = new Image(); im.onload = () => resolve(im); im.src = dataUrl; });
-              const isSpecificStore = Array.isArray(tag.roles) && !tag.roles.includes('ALL');
-              let finalDataUrl = dataUrl;
-              if (isSpecificStore) {
-                const cropRatio = 0.10;
-                const cropH = Math.max(1, Math.round(img.height * (1 - cropRatio)));
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = cropH;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, img.width, cropH, 0, 0, canvas.width, canvas.height);
-                finalDataUrl = canvas.toDataURL(blob.type || 'image/png');
-              }
-              const renderImg = await new Promise((resolve) => { const m = new Image(); m.onload = () => resolve(m); m.src = finalDataUrl; });
-              const pageW = renderImg.width;
-              const pageH = renderImg.height;
-              const format = blob.type.includes('jpeg') || blob.type.includes('jpg') ? 'JPEG' : 'PNG';
-              if (!pdf) {
-                pdf = new JsPDF({ unit: 'pt', format: [pageW, pageH] });
-              } else {
-                pdf.addPage([pageW, pageH]);
-              }
-              pdf.addImage(finalDataUrl, format, 0, 0, pageW, pageH);
-              anyAdded = true;
-              successIds.push(tag.id);
-            } catch (_) { /* ignora erro individual */ }
+            return status !== 'expired';
+          });
+          if (!validIds.length) {
+            if (window.Swal) {
+              await Swal.fire({ icon: 'info', title: 'Nada para imprimir', text: 'Todas as selecionadas estão vencidas.' });
+            } else {
+              alert('Todas as selecionadas estão vencidas.');
+            }
+            return;
           }
-          if (!anyAdded) {
+
+          // Gera em lotes para evitar erro "Array.join: Invalid string length"
+          const MAX_PER_PDF = 70; // ajuste fino conforme memória do dispositivo
+          const groups = chunk(validIds, MAX_PER_PDF);
+          const allSuccessIds = [];
+
+          // Função utilitária para baixar um Blob
+          const downloadBlob = (blob, fname) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+          };
+
+          for (let gi = 0; gi < groups.length; gi++) {
+            const part = groups[gi];
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Gerando lote ${gi+1}/${groups.length}...`;
+            let pdf = null;
+            let pagesAdded = 0;
+            for (let i = 0; i < part.length; i++) {
+              const id = part[i];
+              const tag = (window.tags || []).find(t => String(t.id) === String(id));
+              if (!tag) continue;
+              try {
+                const resp = await fetch(tag.imgUrl, { cache: 'no-store' });
+                const blob = await resp.blob();
+                const dataUrl = await new Promise((resolve, reject) => {
+                  const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob);
+                });
+                const img = await new Promise((resolve) => { const im = new Image(); im.onload = () => resolve(im); im.src = dataUrl; });
+                const isSpecificStore = Array.isArray(tag.roles) && !tag.roles.includes('ALL');
+                let finalDataUrl = dataUrl;
+                if (isSpecificStore) {
+                  const cropRatio = 0.10; // corta 10% da base quando específico da loja
+                  const cropH = Math.max(1, Math.round(img.height * (1 - cropRatio)));
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = cropH;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, img.width, cropH, 0, 0, canvas.width, canvas.height);
+                  finalDataUrl = canvas.toDataURL(blob.type || 'image/png');
+                }
+                const renderImg = await new Promise((resolve) => { const m = new Image(); m.onload = () => resolve(m); m.src = finalDataUrl; });
+                const pageW = renderImg.width;
+                const pageH = renderImg.height;
+                const format = (blob.type && (blob.type.includes('jpeg') || blob.type.includes('jpg'))) ? 'JPEG' : 'PNG';
+                if (!pdf) {
+                  pdf = new JsPDF({ unit: 'pt', format: [pageW, pageH] });
+                } else {
+                  pdf.addPage([pageW, pageH]);
+                }
+                pdf.addImage(finalDataUrl, format, 0, 0, pageW, pageH);
+                pagesAdded++;
+                allSuccessIds.push(tag.id);
+              } catch (_) { /* ignora erro individual e segue */ }
+            }
+            if (pagesAdded > 0 && pdf) {
+              // Usa arraybuffer para reduzir riscos de estouro de string
+              const ab = pdf.output('arraybuffer');
+              const blob = new Blob([ab], { type: 'application/pdf' });
+              const fname = groups.length > 1 ? `tags_selecionadas_parte_${String(gi+1).padStart(2,'0')}.pdf` : 'tags_selecionadas.pdf';
+              downloadBlob(blob, fname);
+            }
+          }
+
+          if (!allSuccessIds.length) {
             if (window.Swal) {
               await Swal.fire({ icon: 'info', title: 'Nada para imprimir', text: 'Nenhuma tag válida selecionada.' });
             } else {
@@ -1328,14 +1367,8 @@
             }
             return;
           }
-          const blob = pdf.output('blob');
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank', 'noopener');
-          const a = document.createElement('a');
-          a.href = url; a.download = 'tags_selecionadas.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
-          // Marca como impressas as que foram adicionadas ao PDF
-          await markPrintedMany(successIds);
+          // Marca como impressas todas as que foram realmente adicionadas
+          await markPrintedMany(allSuccessIds);
         } finally {
           btn.disabled = false;
           btn.innerHTML = original;
