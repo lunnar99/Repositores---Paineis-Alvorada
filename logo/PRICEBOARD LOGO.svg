@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Camada_1" data-name="Camada 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3518.79 811.55">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-2 {
+        letter-spacing: .01em;
+      }
+
+      .cls-3 {
+        letter-spacing: 0em;
+      }
+
+      .cls-4 {
+        letter-spacing: 0em;
+      }
+
+      .cls-5 {
+        letter-spacing: 0em;
+      }
+
+      .cls-6 {
+        letter-spacing: 0em;
+      }
+
+      .cls-7 {
+        letter-spacing: 0em;
+      }
+
+      .cls-8 {
+        font-family: NaruSans-Bold, 'Naru Sans';
+        font-size: 508.82px;
+        font-weight: 700;
+      }
+
+      .cls-8, .cls-9 {
+        fill: #daedec;
+      }
+
+      .cls-10 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-11 {
+        letter-spacing: 0em;
+      }
+    </style>
+  </defs>
+  <text class="cls-8" transform="translate(544.06 592.17)"><tspan class="cls-3" x="0" y="0">P</tspan><tspan class="cls-2" x="329.71" y="0">r</tspan><tspan class="cls-11" x="561.72" y="0">i</tspan><tspan class="cls-1" x="714.37" y="0">c</tspan><tspan class="cls-5" x="1028.82" y="0">e</tspan><tspan class="cls-4" x="1356.5" y="0">B</tspan><tspan class="cls-7" x="1693.34" y="0">o</tspan><tspan class="cls-6" x="2023.05" y="0">a</tspan><tspan class="cls-10" x="2378.71" y="0">r</tspan><tspan x="2590.37" y="0">d</tspan></text>
+  <g>
+    <path class="cls-9" d="M428.25,382.91v209.26h-85c-21.68,0-39.26-17.58-39.26-39.26v-85H94.74c-21.68,0-39.26-17.58-39.26-39.26v-209.26h85c21.68,0,39.26,17.58,39.26,39.26v85h209.26c21.68,0,39.26,17.58,39.26,39.26Z"/>
+    <path class="cls-9" d="M303.99,134.39v85h-85c-21.68,0-39.26-17.58-39.26-39.26v-45.74c0-21.68,17.58-39.26,39.26-39.26h45.75c21.68,0,39.26,17.58,39.26,39.26Z"/>
+    <path class="cls-9" d="M303.99,631.42v45.74c0,21.68-17.58,39.26-39.26,39.26h-45.75c-21.68,0-39.26-17.58-39.26-39.26v-85h85c21.68,0,39.26,17.58,39.26,39.26Z"/>
+  </g>
+</svg>

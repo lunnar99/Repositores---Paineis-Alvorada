@@ -417,11 +417,6 @@
             <input type="checkbox" id="selectAll">
             <label for="selectAll">Selecionar todos</label>
             <button id="deleteSelected">Excluir selecionados</button>
-            <!-- Botão global de exclusão definitiva (teste) -->
-            <button id="openForceDelete" title="Excluir definitivamente (teste)" style="margin-left:8px; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:6px; border:1px solid #333; background:#fff; cursor:pointer;">
-                <i class="fa-solid fa-bolt" style="color:#000"></i>
-                Limpeza (teste)
-            </button>
             <!-- Botão que abre o modal -->
             <button id="openFilters-tags" class="btn-filter-tags" type="button">
                 <i class="fa fa-filter"></i>
@@ -512,25 +507,10 @@
         </div>
     </div>
 
-    <!-- Modal de Exclusão Definitiva (teste) -->
-    <div id="forceDeleteModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 420px; text-align: center;">
-            <div style="margin-bottom: 14px;">
-                <h2 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 18px;">Exclusão definitiva (teste)</h2>
-                <p style="margin: 0; color: #7f8c8d; font-size: 13px;">Escolha o que excluir do banco e limpar de todos os painéis.</p>
-            </div>
-            <div style="display:flex; gap:10px; justify-content:center; margin-bottom: 12px; flex-wrap:wrap;">
-                <button id="forceDeleteSelected" class="btn-primary" style="background:#c0392b;">Excluir selecionadas</button>
-                <button id="forceDeleteAll" class="btn-primary" style="background:#000000;">Excluir todas</button>
-            </div>
-            <button id="cancelForceDelete" class="btn-secondary">Cancelar</button>
-        </div>
-    </div>
-
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc, updateDoc, arrayRemove, or } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
 
         const firebaseConfig = {
@@ -557,9 +537,6 @@
         window.setDoc = setDoc;
         window.query = query;
         window.where = where;
-        window.updateDoc = updateDoc;
-        window.arrayRemove = arrayRemove;
-        window._or = or;
         window.ref = ref;
         window.uploadBytes = uploadBytes;
         window.getDownloadURL = getDownloadURL;
@@ -1006,56 +983,6 @@
                     showDeleteConfirmation(tag, idx);
                 });
             });
-
-            // Ação global abre modal de exclusão definitiva
-            document.getElementById('openForceDelete')?.addEventListener('click', () => {
-                const modal = document.getElementById('forceDeleteModal');
-                if (modal) modal.style.display = 'block';
-            });
-
-            // Modal: cancelar
-            document.getElementById('cancelForceDelete')?.addEventListener('click', () => {
-                const modal = document.getElementById('forceDeleteModal');
-                if (modal) modal.style.display = 'none';
-            });
-
-            // Modal: excluir selecionadas
-            document.getElementById('forceDeleteSelected')?.addEventListener('click', async () => {
-                try {
-                    const boxes = document.querySelectorAll('.tag-checkbox:checked');
-                    const ids = Array.from(boxes).map(b => {
-                        const idx = Number(b.getAttribute('data-index'));
-                        return tags[idx]?.id;
-                    }).filter(Boolean);
-                    if (!ids.length) { alert('Selecione ao menos uma tag.'); return; }
-                    const ok = confirm(`Excluir PERMANENTEMENTE ${ids.length} tag(s) e limpar referências?`);
-                    if (!ok) return;
-                    await Promise.all(ids.map(id => hardDeleteTagCompletely(id)));
-                    // Atualiza local
-                    const idSet = new Set(ids.map(String));
-                    tags = tags.filter(t => !idSet.has(String(t.id)));
-                    renderTags();
-                } finally {
-                    const modal = document.getElementById('forceDeleteModal');
-                    if (modal) modal.style.display = 'none';
-                }
-            });
-
-            // Modal: excluir todas (aplica nos itens listados atualmente)
-            document.getElementById('forceDeleteAll')?.addEventListener('click', async () => {
-                try {
-                    const ids = tags.map(t => t.id);
-                    if (!ids.length) { alert('Não há tags para excluir.'); return; }
-                    const ok = confirm(`Excluir PERMANENTEMENTE TODAS (${ids.length}) as tags listadas e limpar referências?`);
-                    if (!ok) return;
-                    await Promise.all(ids.map(id => hardDeleteTagCompletely(id)));
-                    tags = [];
-                    renderTags();
-                } finally {
-                    const modal = document.getElementById('forceDeleteModal');
-                    if (modal) modal.style.display = 'none';
-                }
-            });
         }
 
         // Função para mostrar o modal de confirmação de remoção
@@ -1140,48 +1067,6 @@
                 deleted: true,
                 deletedAt: new Date()
             }, { merge: true });
-        }
-
-        // Exclusão definitiva para testes: remove o documento de 'tags' e todos os rastros relacionados
-        async function hardDeleteTagCompletely(id) {
-            const idStr = String(id);
-            // 1) Remove o documento principal
-            try { await window.deleteDoc(window.doc(window.db, 'tags', idStr)); } catch (e) { /* pode já não existir */ }
-
-            // 2) Remove referências em coleções de estado por tagId
-            const stateCols = ['printedTags', 'attentionTags', 'removedTags'];
-            for (const col of stateCols) {
-                try {
-                    const q = window.query(window.collection(window.db, col), window.where('tagId', '==', idStr));
-                    const snap = await window.getDocs(q);
-                    const deletions = [];
-                    snap.forEach(d => { deletions.push(window.deleteDoc(window.doc(window.db, col, d.id))); });
-                    if (deletions.length) await Promise.allSettled(deletions);
-                } catch (e) { /* ignora por segurança */ }
-            }
-
-            // 3) Limpa arrays agregados em storeState (printedIds/removedIds/attentionIds)
-            try {
-                const qSS = window.query(
-                    window.collection(window.db, 'storeState'),
-                    window._or(
-                        window.where('printedIds', 'array-contains', idStr),
-                        window.where('removedIds', 'array-contains', idStr),
-                        window.where('attentionIds', 'array-contains', idStr)
-                    )
-                );
-                const snapSS = await window.getDocs(qSS);
-                const updates = [];
-                snapSS.forEach(ds => {
-                    const data = ds.data?.() || ds.data();
-                    const payload = {};
-                    if (Array.isArray(data?.printedIds) && data.printedIds.includes(idStr)) payload.printedIds = window.arrayRemove(idStr);
-                    if (Array.isArray(data?.removedIds) && data.removedIds.includes(idStr)) payload.removedIds = window.arrayRemove(idStr);
-                    if (Array.isArray(data?.attentionIds) && data.attentionIds.includes(idStr)) payload.attentionIds = window.arrayRemove(idStr);
-                    if (Object.keys(payload).length) updates.push(window.updateDoc(window.doc(window.db, 'storeState', ds.id), payload));
-                });
-                if (updates.length) await Promise.allSettled(updates);
-            } catch (e) { /* ignora erros de limpeza agregada */ }
         }
 
         async function renderTagsFromServer() {
