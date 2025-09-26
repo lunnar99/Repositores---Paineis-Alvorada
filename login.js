@@ -1,6 +1,14 @@
 function login() {
   const inputUser = document.getElementById('username').value.trim();
   const inputPass = document.getElementById('password').value.trim();
+  const overlay = document.getElementById('loginOverlay');
+  const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+
+  const setLoading = (state) => {
+    if (overlay) overlay.classList.toggle('show', state);
+    if (submitBtn) submitBtn.disabled = state;
+  };
+  setLoading(true);
 
   // Função para aguardar o SweetAlert carregar
   function waitForSwal(callback) {
@@ -75,7 +83,8 @@ function login() {
     localStorage.setItem("role", "ADM");
     localStorage.setItem("user", "Administrador");
     localStorage.setItem("loginTime", Date.now());
-      showSuccessAndRedirect('Carregando seu painel administrativo…', 'ADM-painel.html');
+    setLoading(false);
+    showSuccessAndRedirect('Carregando seu painel administrativo…', 'adm-interface.html');
     return;
   }
 
@@ -104,15 +113,20 @@ function login() {
         localStorage.setItem("role", role);
         localStorage.setItem("user", userName);
         localStorage.setItem("loginTime", Date.now());
-          showSuccessAndRedirect('Carregando seu painel…', 'main.html');
+        setLoading(false);
+        showSuccessAndRedirect('Carregando seu painel…', 'main.html');
       } else {
+        setLoading(false);
         alert("Usuário ou senha inválidos");
       }
     })
-    .catch(() => alert("Erro ao carregar usuários"));
+    .catch(() => {
+      setLoading(false);
+      alert("Erro ao carregar usuários");
+    });
 }
 
-// Permitir Enter para enviar o formulário e evitar duplo disparo
+// Bind único: submeter o formulário, mostrar overlay e focar usuário
 window.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('loginForm');
   if (form) {
@@ -121,21 +135,6 @@ window.addEventListener('DOMContentLoaded', () => {
       login();
     });
   }
-  // foco inicial para agilizar o login
-  const userInput = document.getElementById('username');
-  if (userInput) userInput.focus();
-});
-
-// Permitir Enter para enviar o formulário e evitar duplo disparo
-window.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('loginForm');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      login();
-    });
-  }
-  // foco inicial para agilizar o login
   const userInput = document.getElementById('username');
   if (userInput) userInput.focus();
 });

@@ -1,82 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <!-- Prefetch páginas seguintes para navegação mais rápida -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login • PriceBoard</title>
+    <link rel="preload" href="font/NaruSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="font/NaruSans-Bold.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="prefetch" href="main.html">
     <link rel="prefetch" href="ADM-painel.html">
 </head>
 <style>
-    body {
-        font-family: poppins, sans-serif;
-        margin: 0;
-        background-color: #9fb4a1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
+    @font-face {
+        font-family: "NaruSans";
+        src: url("font/NaruSans-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
     }
 
-    .login {
-        background-color: white;
-        padding: 10px 80px 50px 80px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
+    @font-face {
+        font-family: "NaruSans";
+        src: url("font/NaruSans-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-style: bold;
+        font-display: swap;
     }
 
-    h1 {
-        text-align: center;
-        color: #4CAF50;
+    :root {
+        --brand: #15936f;
+        /* button/brand green */
+        --panel: #d7ebe8;
+        /* light teal background close to screenshot */
+        --field: #c2d2cf;
+        /* input bg */
+        --text: #1a2b2a;
+        /* dark */
     }
 
-    form {
-        max-width: 300px;
-        margin: auto;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 8px;
-        margin-left: 25px;
-    }
-
-    input {
-        width: 100%;
-        padding: 15px;
-        margin-bottom: 16px;
+    * {
         box-sizing: border-box;
-        border: 1px solid #4CAF50;
-        border-radius: 40px;
-        outline: none;
-        transition: border-color 0.3s;
     }
 
-    input:focus {
-        border-color: #1b5a1e;
+    html,
+    body {
+        height: 100%;
     }
 
-    button {
+    body {
+        margin: 0;
+        font-family: NaruSans, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text);
+        background: #ffffff;
+    }
+
+    .screen {
+        height: 100vh;
+        width: 100vw;
+        display: grid;
+        grid-template-columns: 1fr 520px;
+        /* left image, right panel fixed-ish */
+        overflow: hidden;
+    }
+
+    .hero {
+        position: relative;
+        z-index: 0;
+    }
+
+    .hero img {
         width: 100%;
-        padding: 10px;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .panel {
+        background: var(--panel);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
+        height: 100vh;
+        /* ocupa toda a coluna direita */
+        border-top-left-radius: 48px;
+        /* cantos arredondados que sobrepõem o fundo */
+        border-bottom-left-radius: 48px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .panel-inner {
+        width: 100%;
+        max-width: 420px;
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+
+    .brand {
+        width: 270px;
+        height: auto;
+        margin: 8px 0 48px;
+    }
+
+    .form {
+        display: grid;
+        gap: 16px;
+    }
+
+    .field input {
+        width: 100%;
+        height: 54px;
+        border-radius: 10px;
+        border: 0;
+        outline: none;
+        background: var(--field);
+        padding: 0 18px;
+        font-size: 18px;
+        color: #0e2724;
+    }
+
+    .field input::placeholder {
+        color: #6e8a86;
+    }
+
+    .cta {
+        height: 56px;
+        border-radius: 10px;
+        background: var(--brand);
+        color: #fff;
+        border: 0;
+        font-size: 20px;
+        font-weight: 700;
         cursor: pointer;
-        border-radius: 40px;
-        padding: 15px;
-        transition: background-color 0.3s, transform 0.3s;
+        width: 100%;
     }
 
-    button:hover {
-        background: linear-gradient(to right, #52da52, #45a049);
-        transform: scale(1.05);
+    .cta:hover {
+        filter: brightness(0.95);
     }
 
-    /* Overlay de carregamento bonito */
+    .error {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #6e8a86;
+    }
+
+    /* Sobrepor um pouco o fundo à esquerda */
+    .panel {
+        position: relative;
+        z-index: 10;
+        margin-left: -56px;
+        /* empurra o painel para cima da imagem */
+    }
+
+    input:active,
+    input:focus {
+        background: #ffffff;
+        box-shadow: 0 0 0 1px #108e64;
+        transform: scale(1.02);
+    }
+
+    /* Overlay de carregamento (igual ao index) */
     .overlay {
         position: fixed;
         inset: 0;
@@ -93,35 +180,58 @@
         width: 56px;
         height: 56px;
         border: 6px solid #cce7cc;
-        border-top-color: #4CAF50;
+        border-top-color: var(--brand);
         border-radius: 50%;
         animation: spin 0.9s linear infinite;
         margin-bottom: 16px;
     }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .overlay p {
         color: #1b5a1e;
         font-weight: 600;
         margin: 0;
     }
+
+    /* Responsiveness */
+    @media (max-width: 900px) {
+        .screen {
+            grid-template-columns: 1fr;
+        }
+
+        .panel {
+            border-radius: 0;
+            margin-left: 0;
+            height: auto;
+        }
+
+        .brand {
+            margin: 16px 0 32px;
+        }
+    }
 </style>
 
 <body>
-    <div class="login">
-        <h1>Login</h1>
-        <form id="loginForm">
-            <label for="username">Usuário</label>
-            <input type="text" id="username" name="username" required>
-            <br>
-            <label for="password">Senha</label>
-            <input type="password" id="password" name="password" required>
-            <br>
-            <button type="submit">Login</button>
-        </form>
+    <main class="screen">
+        <section class="hero">
+            <img src="assets/FOTO DO HOMI.jpg" alt="Colaborador em mercado" />
+        </section>
 
-    </div>
+        <aside class="panel">
+            <div class="panel-inner">
+                <img class="brand" src="logo/LOGO VERDE.svg" alt="Price Board" />
+
+                <form class="form" id="loginForm">
+                    <div class="field">
+                        <input id="username" name="username" type="text" placeholder="Usuário" required />
+                    </div>
+                    <div class="field">
+                        <input id="password" name="password" type="password" placeholder="Senha" required />
+                    </div>
+                    <button class="cta" type="submit">Fazer Login</button>
+                </form>
+            </div>
+        </aside>
+    </main>
     <!-- Overlay para feedback visual ao logar -->
     <div class="overlay" id="loginOverlay" aria-hidden="true">
         <div class="spinner" role="status" aria-label="Carregando"></div>

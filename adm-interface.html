@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle</title>
+    <link rel="stylesheet" href="adm.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/logo/LOGO ADM.png" type="image/png">
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="logo">
+            <img src="/logo/PRICEBOARD LOGO.svg" alt="Logo-Tags" border="0" width="120px">
+        </div>
+        <div class="user-info">
+            <button class="tags-preview">Tag's</button>
+            <button class="tags-preview">PDF's</button>
+            <button class="tags-preview">Def. Margem</button>
+            <button class="tags-preview">Etiquetas</button>
+        </div>
+    </header>
+    <section class="second-header">
+        <p style="font-family: 'NaruSans-Bold', sans-serif; font-size: 20px; color: #0c6749;">Novo Upload</p>
+        <div class="actions-row">
+            <button id="btn-upload" class="btn-upload">Selecione ou arraste<br>um arquivo aqui</button>
+            <button id="btn-date" class="action-button">Selecionar<br>a data</button>
+            <button id="btn-cluster" class="action-button">Selecionar<br>o cluster</button>
+            <button id="btn-action" class="action-button">Selecionar<br>a ação</button>
+            <div class="comentario"><input id="comment" type="text" placeholder="Comentário"></div>
+        </div>
+        <!-- Inputs ocultos necessários para lógica -->
+        <input type="file" id="img" accept="image/*" multiple style="display:none;">
+        <input type="hidden" id="start">
+        <input type="hidden" id="end">
+        <!-- ancora e container do date range picker -->
+        <input type="text" id="dateRangeDisplay"
+            style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" aria-hidden="true" readonly>
+        <div id="dateRangePicker" class="drp" style="display:none; position:absolute; z-index:1100;"></div>
+    </section>
+
+    <div class="tags-fade"></div>
+
+    <nav class="side-bar">
+        <div class="sidebar-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="display:flex; gap:6px;">
+                <button id="toggleStores" style="background:#0c6749; color:#fff; border:none; padding:6px 12px; border-radius:18px; font-size:12px; cursor:pointer; font-weight:600;">Lojas</button>
+                <button id="toggleCategories" style="background:#16403c; color:#fff; border:none; padding:6px 12px; border-radius:18px; font-size:12px; cursor:pointer; font-weight:600;">Categorias</button>
+            </div>
+            <button id="refreshCategories" title="Recarregar categorias" style="background:#16403c; color:#fff; border:none; width:30px; height:30px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="fa fa-rotate"></i></button>
+        </div>
+        <div class="sidebar-search">
+            <input id="search-lojas" type="text" placeholder="Pesquisar lojas" aria-label="Pesquisar lojas">
+        </div>
+            <div class="sidebar-controls">
+                <button id="select-all-stores" class="select-all-btn">
+                    <i class="fa fa-check-square"></i> Todas as lojas
+                </button>
+            </div>
+        <ul id="lojas-list"></ul>
+            <div id="categoriesPanel" style="display:none; flex:1; overflow:auto; padding:6px 10px 10px;">
+                <ul id="adm-categories-list" style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;"></ul>
+                <div style="font-size:11px; opacity:.6; margin-top:8px;">Categorias vazias (não fixas) desaparecem automaticamente.</div>
+            </div>
+    </nav>
+
+    <!-- Central content area (scrolls independently) -->
+    <main class="content" id="main-content" style="padding-top: 32px;">
+        <section class="select-section">
+            <input style="display: none;" type="checkbox" id="selectAll">
+            <label for="selectAll">Selecionar todos</label>
+            <button id="deleteSelected" class="btn-primary" style="background-color: #db0505; :hover { background-color: #5c0e05; }"><i class="fa fa-trash"></i> Excluir selecionados</button>
+            <button id="openFilters-tags" class="btn-filter-tags" style="background-color: #108E64;" type="button"><i class="fa fa-filter"></i>
+                Filtros</button>
+            <input type="text" id="tagsQuickSearch" placeholder="Buscar por dia (ex: 7 ou 07 a 10)">
+        </section>
+        <main class="tags-grid" id="tagsGrid"></main>
+    </main>
+
+    <!-- Scrim and FAB for select-section -->
+    <div id="selectScrim" class="select-scrim" aria-hidden="true"></div>
+    <button id="selectFab" class="select-fab" title="Abrir seleção de tags" aria-label="Abrir filtros de seleção">
+        <i class="fa-solid fa-list-check"></i>
+    </button>
+
+    <!-- Cluster (Lojas) Modal -->
+    <div id="clusterModal" class="modal" style="display:none;">
+        <div class="modal-content modern-modal" style="max-width:780px;">
+            <div class="header-filtro"
+                style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <h2 style="margin:0; font-size:18px;"><i class="fa fa-store"></i> Selecionar Lojas</h2>
+                <span id="closeCluster" class="close-btn" style="cursor:pointer;">&times;</span>
+            </div>
+            <div class="modal-body" style="margin-top:10px;">
+                <div
+                    style="display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px;">
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" id="clusterSelectAll" class="control-btn"><i
+                                class="fa fa-check-square"></i> Todas</button>
+                        <button type="button" id="clusterClear" class="control-btn"><i class="fa fa-undo"></i>
+                            Limpar</button>
+                    </div>
+                    <input type="text" id="storeSearchCluster" placeholder="Buscar loja (ex: CF1)"
+                        style="padding:6px 10px; border:1px solid #6b8c74; border-radius:8px;">
+                </div>
+                <div id="clusterStores" class="stores-grid-modern"
+                    style="display:grid; grid-template-columns: repeat(auto-fill, minmax(72px,1fr)); gap:8px;"></div>
+                <div class="selection-summary" style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
+                    <span><strong id="clusterSelectedCount">0</strong> selecionadas</span>
+                    <span style="opacity:.7;">/</span>
+                    <span id="clusterTotalStores">0</span>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                <button id="clusterApply" class="btn-primary" type="button"><i class="fa fa-check"></i> Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action (Categoria) Modal -->
+    <div id="actionModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:520px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <h2 style="margin:0;">Selecionar Ação</h2>
+                <span id="closeAction" class="close" style="cursor:pointer;">&times;</span>
+            </div>
+            <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+                <label for="categorySelect" style="font-weight:bold;">Categoria</label>
+                <div style="display:flex; gap:8px;">
+                    <select id="categorySelect"
+                        style="flex:1; padding:8px; border:1px solid #6b8c74; border-radius:8px;">
+                        <option value="" selected disabled>Selecione uma categoria</option>
+                    </select>
+                    <button id="openNewCategory" class="btn-primary" type="button">Nova</button>
+                </div>
+                <div style="opacity:.75; font-size:12px;">Categorias podem ser marcadas como "Ficar para sempre" ao criar
+                    (permanecem disponíveis).</div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button id="applyAction" class="btn-primary" type="button"><i class="fa fa-cloud-upload-alt"></i>
+                    Aplicar e Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Category Modal -->
+    <div id="newCategoryModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:420px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <h2 style="margin:0;">Nova Categoria</h2>
+                <span id="closeNewCategory" class="close" style="cursor:pointer;">&times;</span>
+            </div>
+            <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+                <label for="newCategoryName" style="font-weight:bold;">Nome</label>
+                <input id="newCategoryName" type="text" placeholder="Ex: Liquidação"
+                    style="padding:8px; border:1px solid #6b8c74; border-radius:8px;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input id="newCategorySticky" type="checkbox"> Ficar fixo para sempre
+                </label>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button id="cancelCategory" class="btn-secondary" type="button">Cancelar</button>
+                <button id="saveCategory" class="btn-primary" type="button">Salvar</button>
+            </div>
+        </div>
+    </div>
+    <!-- Overlay de Loading -->
+    <div id="loadingOverlay" class="loading-overlay" aria-hidden="true" style="display:none;">
+        <div class="loader" role="status" aria-label="Carregando"></div>
+    </div>
+
+    <!-- Modal de Confirmação de Remoção -->
+    <div id="deleteConfirmModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i class="fa-solid fa-trash-can" style="font-size: 48px; color: #db0505; margin-bottom: 15px;"></i>
+                <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Remover Tag</h2>
+                <p style="margin: 0; color: #7f8c8d;">Tem certeza que deseja remover esta tag?</p>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: #95a5a6;">Ela ficará marcada como removida e
+                    aparecerá em "Retirar da Loja" para os usuários.</p>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="cancelDelete"
+                    style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    <i class="fa-solid fa-xmark"></i> Cancelar
+                </button>
+                <button id="confirmDelete"
+                    style="background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    <i class="fa-solid fa-trash-can"></i> Sim, Remover
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Sucesso -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 350px; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i class="fa-solid fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
+                <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Tag Removida!</h2>
+                <p style="margin: 0; color: #7f8c8d;">A tag foi marcada como removida com sucesso.</p>
+            </div>
+            <button id="closeSuccess"
+                style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                <i class="fa-solid fa-check"></i> OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Olho por Loja -->
+    <div id="storeEyeModal" class="modal store-eye-modal" style="display:none; z-index: 2147483000; position:fixed; top:0; left:0; width:100vw; height:100vh;">
+        <div class="modal-backdrop" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:2147483000;"></div>
+        <div class="modal-content store-eye-content" style="max-width:760px; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:2147483001; box-shadow:0 8px 32px rgba(0,0,0,0.35);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <h2 id="storeEyeTitle" style="margin:0; font-size:18px;"><i class="fa fa-eye"></i> Loja</h2>
+                <span id="closeStoreEye" class="close" style="cursor:pointer;">&times;</span>
+            </div>
+            <div style="margin-top:60px; display:flex; align-items:center; gap:10px; ">
+                <span style="font-weight:600;">Mostrar:</span>
+                <label style="display:inline-flex; align-items:center; gap:8px; background:#eef5f2; padding:6px 10px; border-radius:999px; cursor:pointer;">
+                    <input id="eyeToggle" type="checkbox" style="accent-color:#108e64; width:18px; height:18px;"> Impressas
+                </label>
+                <span style="opacity:.65; font-size:12px;">(Desmarcado = Não impressas)</span>
+            </div>
+            <div id="storeEyeList" style="margin-top:12px; max-height:60vh; overflow:auto; display:grid; grid-template-columns:1fr; gap:8px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Utility: normalize strings for accent-insensitive comparisons
+        function normalizeString(str) {
+            return str
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        // Ensure any new top-level content ends up inside #main-content (red box area)
+        function migrateLooseNodesToMain() {
+            const main = document.getElementById('main-content');
+            if (!main) return;
+            const isFixedNode = (n) => {
+                if (!(n instanceof HTMLElement)) return true; // ignore text nodes etc.
+                const tagSel = n.tagName + (n.className ? '.' + String(n.className).split(' ').join('.') : '');
+                // quick allow-list for fixed/infra nodes
+                if (/^(HEADER|SECTION|NAV|SCRIPT|STYLE)$/i.test(n.tagName)) return true;
+                if (n.id === 'main-content') return true;
+                // add storeEyeModal to the allow list so it NEVER gets moved inside #main-content
+                if (n.id === 'loadingOverlay' || n.id === 'deleteConfirmModal' || n.id === 'successModal' || n.id === 'clusterModal' || n.id === 'actionModal' || n.id === 'newCategoryModal' || n.id === 'storeEyeModal') return true;
+                // otherwise treat as movable
+                return false;
+            };
+            // Move any non-fixed, non-main elements into main
+            const toMove = [];
+            for (const node of Array.from(document.body.children)) {
+                if (node === main) continue;
+                if (!isFixedNode(node)) toMove.push(node);
+            }
+            for (const node of toMove) main.appendChild(node);
+            // safety: if some earlier script inserted storeEyeModal before this ran and it was moved, put it back under body
+            const eyeModal = document.getElementById('storeEyeModal');
+            if (eyeModal && eyeModal.parentElement !== document.body) {
+                try { document.body.appendChild(eyeModal); } catch(_) {}
+            }
+        }
+
+        // Map of raw keys to human-readable names with accents and spacing
+        const LOJA_NAME_MAP = {
+            aguamineral: 'Água Mineral',
+            araruama1: 'Araruama 1',
+            araruama2: 'Araruama 2',
+            arsenal: 'Arsenal',
+            bacaxa1: 'Bacaxá 1',
+            bacaxa2: 'Bacaxá 2',
+            botafogo: 'Botafogo',
+            buzios: 'Búzios',
+            cabofrio1: 'Cabo Frio 1',
+            cabofrio2: 'Cabo Frio 2',
+            casimirodeabreu: 'Casimiro de Abreu',
+            colubande: 'Colubandê',
+            copacabana: 'Copacabana',
+            cordeirinho: 'Cordeirinho',
+            iguaba: 'Iguaba',
+            inoa: 'Inoã',
+            itaborai: 'Itaboraí',
+            jardinmcatarina: 'Jardim Catarina',
+            jardimcatarina: 'Jardim Catarina',
+            jardimesperanca: 'Jardim Esperança',
+            macae1: 'Macaé 1',
+            macae2: 'Macaé 2',
+            mage1: 'Magé 1',
+            mage2: 'Magé 2',
+            saojosedoimbassai: 'São José do Imbassaí',
+            novacidade: 'Nova Cidade',
+            riobonito1: 'Rio Bonito 1',
+            riobonito2: 'Rio Bonito 2',
+            riodoouro: 'Rio do Ouro',
+            maracana: 'Maracanã',
+            saopedrodaaldeia: 'São Pedro da Aldeia',
+            tangua: 'Tanguá',
+            trindade: 'Trindade',
+            unamar: 'Unamar'
+        };
+
+        // Fallback: build a readable label from a key
+        function humanizeKey(key) {
+            if (LOJA_NAME_MAP[key]) return LOJA_NAME_MAP[key];
+            // Insert spaces before numbers and between words, then capitalize
+            const withSpaces = key
+                .replace(/(\d+)/g, ' $1')
+                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                .replace(/de|do|da|das|dos/gi, (m) => m.toLowerCase());
+            return withSpaces
+                .split(/\s|_/)
+                .filter(Boolean)
+                .map((w, i) => i === 0 ? (w.charAt(0).toUpperCase() + w.slice(1)) : w)
+                .join(' ');
+        }
+
+        async function loadLojas() {
+            try {
+                const res = await fetch('./usuarios.txt', { cache: 'no-store' });
+                if (!res.ok) throw new Error('Falha ao carregar usuarios.txt');
+                const text = await res.text();
+                const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+                // Parse lines like "aguamineral:tag.agm" and build key->code map dynamically
+                const pairs = lines
+                    .map(line => line.split(':'))
+                    .filter(parts => parts.length >= 2);
+                const map = {};
+                const lojas = [];
+                for (const [keyRaw, valRaw] of pairs) {
+                    const key = (keyRaw || '').trim();
+                    if (!key || /^adm/i.test(key)) continue; // skip admins
+                    // Extract code from patterns like "tag.ar1" -> "AR1"
+                    let code = (valRaw || '').trim();
+                    const m = code.match(/tag\.(.+)$/i);
+                    code = m ? m[1] : code;
+                    code = String(code || '').toUpperCase();
+                    if (key) {
+                        map[key] = code;
+                        lojas.push(key);
+                    }
+                }
+                STORE_KEY_TO_CODE_MAP = map;
+
+                // Map to display labels
+                const lojaObjs = lojas.map(key => ({
+                    key,
+                    label: LOJA_NAME_MAP[key] || humanizeKey(key)
+                }));
+
+                // Sort alphabetically using pt-BR locale and accent sensitivity
+                lojaObjs.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
+
+                renderLojas(lojaObjs);
+                migrateLooseNodesToMain();
+
+                // Hook up search
+                const search = document.getElementById('search-lojas');
+                search.addEventListener('input', () => {
+                    const q = normalizeString(search.value || '');
+                    const filtered = lojaObjs.filter(x => normalizeString(x.label).includes(q));
+                    renderLojas(filtered);
+                    // Re-setup do botão após filtrar
+                    setTimeout(setupSelectAllStoresButton, 50);
+                });
+
+                // Não chamar updateTagsFilter aqui; o módulo ADM define 'viewFilter' depois
+                // e uma chamada antecipada causaria erro e exibiria 'Erro ao carregar lojas'.
+            } catch (err) {
+                console.error(err);
+                const ul = document.getElementById('lojas-list');
+                if (ul) {
+                    ul.innerHTML = '<li style="color:#ffb3b3">Erro ao carregar lojas</li>';
+                }
+            }
+        }
+
+        // Variável global para controlar lojas selecionadas no sidebar
+        let selectedStores = JSON.parse(localStorage.getItem('selectedStores')) || [];
+        let allStores = [];
+        
+        // Mapa dinâmico: chave da loja (usuarios.txt) -> código do cluster (ex.: "AR1")
+        // Preenchido em loadLojas() a partir do arquivo usuarios.txt
+        let STORE_KEY_TO_CODE_MAP = {};
+
+        function renderLojas(items) {
+            const ul = document.getElementById('lojas-list');
+            if (!ul) return;
+            ul.innerHTML = '';
+            allStores = items; // Armazenar todas as lojas para referência
+            
+            for (const item of items) {
+                const li = document.createElement('li');
+                const isSelected = selectedStores.includes(item.key);
+                
+                if (isSelected) {
+                    li.classList.add('selected');
+                }
+                
+                // Checkbox oculto apenas para controle interno
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = isSelected;
+                checkbox.value = item.key;
+                checkbox.style.display = 'none';
+                // Wrapper para label + ações (olho)
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.justifyContent = 'space-between';
+                row.style.gap = '8px';
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = item.label;
+                const eyeBtn = document.createElement('button');
+                eyeBtn.type = 'button';
+                eyeBtn.title = 'Ver impressões desta loja';
+                eyeBtn.innerHTML = '<i class="fa fa-eye"></i>';
+                Object.assign(eyeBtn.style, { background: 'transparent', color: '#fff', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px' });
+                // Vincular abertura do modal de loja
+                eyeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const code = STORE_KEY_TO_CODE_MAP[item.key] || item.key?.toUpperCase();
+                    if (window.openStoreEyeModal && code) {
+                        window.openStoreEyeModal(item.key, code);
+                    }
+                });
+                row.appendChild(labelSpan);
+                row.appendChild(eyeBtn);
+                li.appendChild(row);
+                
+                // Event listener no li inteiro
+                li.addEventListener('click', () => {
+                    const newState = !checkbox.checked;
+                    checkbox.checked = newState;
+                    toggleStoreSelection(item.key, newState);
+                });
+                
+                li.appendChild(checkbox);
+                ul.appendChild(li);
+            }
+            
+            updateSelectAllButton();
+        }
+
+        function toggleStoreSelection(storeKey, isSelected) {
+            const checkbox = document.querySelector(`#lojas-list li input[value="${storeKey}"]`);
+            const li = checkbox?.closest('li');
+            
+            if (isSelected) {
+                if (!selectedStores.includes(storeKey)) {
+                    selectedStores.push(storeKey);
+                }
+                li?.classList.add('selected');
+            } else {
+                selectedStores = selectedStores.filter(key => key !== storeKey);
+                li?.classList.remove('selected');
+            }
+            
+            // Salvar no localStorage
+            localStorage.setItem('selectedStores', JSON.stringify(selectedStores));
+            
+            // Atualizar filtro de tags
+            updateTagsFilter();
+            updateSelectAllButton();
+        }
+
+        function updateSelectAllButton() {
+            const selectAllBtn = document.getElementById('select-all-stores');
+            if (!selectAllBtn) return;
+            
+            const icon = selectAllBtn.querySelector('i');
+            
+            if (selectedStores.length === 0) {
+                selectAllBtn.classList.remove('all-selected');
+                icon.className = 'fa fa-square';
+                selectAllBtn.innerHTML = '<i class="fa fa-square"></i> Todas as lojas';
+            } else if (selectedStores.length === allStores.length) {
+                selectAllBtn.classList.add('all-selected');
+                selectAllBtn.innerHTML = '<i class="fa fa-check-square"></i> Desmarcar todas';
+            } else {
+                selectAllBtn.classList.remove('all-selected');
+                selectAllBtn.innerHTML = '<i class="fa fa-minus-square"></i> Algumas selecionadas';
+            }
+        }
+
+        function updateTagsFilter() {
+            // Converter chaves das lojas para códigos dos clusters
+            const selectedStoreCodes = selectedStores.map(storeKey => STORE_KEY_TO_CODE_MAP[storeKey] || storeKey.toUpperCase());
+
+            // Atualiza window.viewFilter (quando o módulo ADM já carregou)
+            if (window.viewFilter) {
+                window.viewFilter.stores = selectedStores.length === 0 ? [] : selectedStoreCodes;
+                // Re-renderizar as tags com o novo filtro (somente se a função global estiver disponível)
+                if (typeof window.renderTagsADM === 'function') {
+                    window.renderTagsADM();
+                }
+            } else {
+                // Deferir até o módulo expor viewFilter
+                window.__pendingViewFilterStores = selectedStoreCodes;
+            }
+        }
+
+        // Event listener para o botão "Todas as lojas"
+        function setupSelectAllStoresButton() {
+            const selectAllBtn = document.getElementById('select-all-stores');
+            if (!selectAllBtn) return;
+            
+            selectAllBtn.addEventListener('click', () => {
+                if (selectedStores.length === allStores.length) {
+                    // Desmarcar todas
+                    selectedStores = [];
+                } else {
+                    // Marcar todas
+                    selectedStores = allStores.map(store => store.key);
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('selectedStores', JSON.stringify(selectedStores));
+                
+                // Atualizar checkboxes na interface
+                const checkboxes = document.querySelectorAll('#lojas-list input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    const isSelected = selectedStores.includes(checkbox.value);
+                    checkbox.checked = isSelected;
+                    const li = checkbox.closest('li');
+                    if (isSelected) {
+                        li.classList.add('selected');
+                    } else {
+                        li.classList.remove('selected');
+                    }
+                });
+                
+                updateTagsFilter();
+                updateSelectAllButton();
+            });
+        }
+
+        // Inicializar filtro de lojas na primeira renderização
+        function initializeStoreFilter() {
+            // Aplicar filtro inicial baseado nas lojas salvas
+            updateTagsFilter();
+        }
+
+        // Delay run until DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => { 
+                loadLojas(); 
+                migrateLooseNodesToMain();
+                setupSelectAllStoresButton();
+                // Inicializar filtro após carregar as tags
+                setTimeout(initializeStoreFilter, 100);
+            });
+        } else {
+            loadLojas();
+            migrateLooseNodesToMain();
+            setupSelectAllStoresButton();
+            // Inicializar filtro após carregar as tags
+            setTimeout(initializeStoreFilter, 100);
+        }
+    </script>
+
+    <!-- Firebase Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAjzds2ts_R2gqgN2x0p80xq20-6QSAkjY",
+            authDomain: "tags-repositores.firebaseapp.com",
+            projectId: "tags-repositores",
+            storageBucket: "tags-repositores.firebasestorage.app",
+            messagingSenderId: "452823969336",
+            appId: "1:452823969336:web:09ce09427ee49f46c880cd",
+            measurementId: "G-0BLTNKVWVZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        window.db = db;
+        window.storage = storage;
+        window.collection = collection;
+        window.doc = doc;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.setDoc = setDoc;
+        window.query = query;
+        window.where = where;
+        window.ref = ref;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+    </script>
+
+    <!-- jsPDF and JSZip loaders -->
+    <script src="jspdf-loader.js"></script>
+    <script src="jszip-loader.js"></script>
+
+    <!-- ADM Logic (refatorado para os novos botões) -->
+    <script type="module">
+        // Gate: only ADM can access
+        const role = localStorage.getItem('role');
+        const user = localStorage.getItem('user');
+        if (!role || role !== 'ADM') {
+            // Comente a linha abaixo se quiser testar sem login ADM
+            // alert('Acesso restrito ao ADM.');
+            // window.location.href = 'index.html';
+        }
+
+        // Fixed session badge (user + role + logout)
+        function createSessionBadge() {
+            if (document.getElementById('sessionBadge')) return;
+            const badge = document.createElement('div');
+            badge.id = 'sessionBadge';
+            badge.className = 'session-badge';
+            const userLabel = (user || 'sem-usuário');
+            const roleLabel = (role || '-');
+            badge.innerHTML = `
+                <span class="id">${userLabel}</span>
+                <span class="sep">•</span>
+                <span class="flag">${roleLabel}</span>
+                <button type="button" class="logout-btn" title="Sair">Sair</button>
+            `;
+            const topbar = document.querySelector('.topbar');
+            if (topbar) {
+                // place in the right-most cell of the grid
+                topbar.appendChild(badge);
+            } else {
+                // fallback: fix it to the top-right of the page
+                badge.style.position = 'fixed';
+                badge.style.top = '8px';
+                badge.style.right = '12px';
+                badge.style.zIndex = '1100';
+                document.body.appendChild(badge);
+            }
+            badge.querySelector('.logout-btn')?.addEventListener('click', () => {
+                try { localStorage.removeItem('role'); localStorage.removeItem('user'); } catch (_) { }
+                window.location.href = 'index.html';
+            });
+        }
+        createSessionBadge();
+
+        const lojas = ["AGM", "AR1", "AR2", "ARS", "BX1", "BX2", "BOT", "BZ1", "CF1", "CF2", "CAS",
+            "CLB", "CPC", "COR", "IGB", "INO", "ITB", "JDC", "JDE", "MC1", "MC2",
+            "MG1", "MG2", "MAR", "NCD", "RB1", "RB2", "RDO", "MRC",
+            "SPD", "TAN", "TRI", "UNA"];
+
+        let tags = [];
+        const printedInfoCache = new Map(); // tagId -> [{role, printedAt}]
+        const attentionInfoCache = new Map(); // tagId -> Set(role)
+
+        // Novo estado de filtros da visualização
+        const viewFilter = { start: null, end: null, stores: [] };
+        // Expor o mesmo objeto no escopo global para integração com scripts não-modulares
+        window.viewFilter = viewFilter;
+        // Se o script do sidebar já tiver definido filtros antes do módulo carregar
+        if (Array.isArray(window.__pendingViewFilterStores)) {
+            viewFilter.stores = window.__pendingViewFilterStores;
+            try { delete window.__pendingViewFilterStores; } catch (_) {}
+        }
+
+        // Upload state
+        const state = { files: [], start: null, end: null, stores: [], category: null, comment: '' };
+
+        // Cluster (Lojas) helpers for modal
+        function renderClusterStores() {
+            const storesDiv = document.getElementById("clusterStores");
+            if (!storesDiv) return;
+            storesDiv.innerHTML = "";
+            lojas.forEach(loja => {
+                const storeItem = document.createElement("div");
+                storeItem.className = "store-item";
+                storeItem.dataset.store = loja;
+                storeItem.innerHTML = `<div class="store-code" style="font-weight:600;">${loja}</div>`;
+                if (state.stores.includes(loja)) storeItem.classList.add("selected");
+                storeItem.addEventListener("click", () => {
+                    storeItem.classList.toggle("selected");
+                    // Atualiza state.stores conforme seleção visual
+                    const code = storeItem.dataset.store;
+                    if (storeItem.classList.contains("selected")) {
+                        if (!state.stores.includes(code)) state.stores.push(code);
+                    } else {
+                        state.stores = state.stores.filter(s => s !== code);
+                    }
+                    updateClusterSelectionCount();
+                });
+                storesDiv.appendChild(storeItem);
+            });
+            updateClusterSelectionCount();
+        }
+        function updateClusterSelectionCount() {
+            const selectedItems = document.querySelectorAll("#clusterStores .store-item.selected");
+            const totalItems = document.querySelectorAll("#clusterStores .store-item");
+            const sel = document.getElementById("clusterSelectedCount");
+            const tot = document.getElementById("clusterTotalStores");
+            if (sel) sel.textContent = selectedItems.length;
+            if (tot) tot.textContent = totalItems.length;
+        }
+        function filterClusterStores(term) {
+            const t = String(term || '').toLowerCase();
+            document.querySelectorAll('#clusterStores .store-item').forEach(item => {
+                const code = (item.dataset.store || '').toLowerCase();
+                item.style.display = code.includes(t) ? 'block' : 'none';
+            });
+            updateClusterSelectionCount();
+        }
+
+        function getStatus(start, end) {
+            const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+            const inicio = new Date(start); const fim = new Date(end);
+            if (!inicio || !fim || isNaN(inicio) || isNaN(fim)) return "expired";
+            if (fim < hoje) return "expired";
+            if (inicio > hoje) return "soon";
+            const diff = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+            return diff <= 1 ? "soon" : "valid";
+        }
+
+        function formatDate(dateInput) {
+            if (!dateInput) return "Data inválida";
+            const date = new Date(dateInput); if (isNaN(date.getTime())) return "Data inválida";
+            const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+            const dia = String(date.getDate()).padStart(2, "0");
+            return `${dia} ${meses[date.getMonth()]}`;
+        }
+
+        function parseToDate(val) { if (!val) return null; if (val instanceof Date) return isNaN(val) ? null : val; return new Date(val); }
+        function dateOnly(d) { const dd = parseToDate(d); if (!dd) return null; return new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()); }
+        function startOfDay(d) { const dd = parseToDate(d); if (!dd) return null; return new Date(dd.getFullYear(), dd.getMonth(), dd.getDate(), 0, 0, 0, 0); }
+        function endOfDay(d) { const dd = parseToDate(d); if (!dd) return null; return new Date(dd.getFullYear(), dd.getMonth(), dd.getDate(), 23, 59, 59, 999); }
+
+        // Date Range Picker (sem libs)
+        const startInput = document.getElementById("start");
+        const endInput = document.getElementById("end");
+        const rangeInput = document.getElementById("dateRangeDisplay");
+        const picker = document.getElementById("dateRangePicker");
+        const mesesNome = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+        const mesesShort = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+        let viewDate = new Date(); viewDate.setDate(1);
+        let selStart = null; let selEnd = null;
+        function toYMDLocal(d) { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0"); return `${y}-${m}-${day}`; }
+        function fromYMDLocal(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+        function formatHumanRange(a, b) { const dd = (d) => String(d.getDate()).padStart(2, "0"); return `${dd(a)} ${mesesShort[a.getMonth()]} a ${dd(b)} ${mesesShort[b.getMonth()]}`; }
+        function openPicker() {
+            if (!picker) return;
+            const anchor = document.getElementById('btn-date') || rangeInput;
+            const container = document.querySelector('section.second-header') || document.body;
+            const rect = anchor.getBoundingClientRect();
+            const parentRect = container.getBoundingClientRect();
+            picker.style.left = `${rect.left - parentRect.left}px`;
+            picker.style.top = `${rect.bottom - parentRect.top + 4}px`;
+            picker.style.display = "block";
+            renderPicker();
+        }
+        function closePicker() { if (picker) picker.style.display = "none"; }
+        function renderPicker() {
+            const y = viewDate.getFullYear(); const m = viewDate.getMonth(); const firstDay = new Date(y, m, 1); const lastDay = new Date(y, m + 1, 0); const startDow = firstDay.getDay(); const total = lastDay.getDate();
+            let html = `
+              <header>
+                <div class="controls"><button type="button" id="drpPrev">&#9664;</button></div>
+                <div>${mesesNome[m]} ${y}</div>
+                <div class="controls"><button type="button" id="drpNext">&#9654;</button></div>
+              </header>
+              <div class="grid"><div class="dow">D</div><div class="dow">S</div><div class="dow">T</div><div class="dow">Q</div><div class="dow">Q</div><div class="dow">S</div><div class="dow">S</div>`;
+            for (let i = 0; i < startDow; i++) { html += `<div class="day muted"></div>`; }
+            for (let d = 1; d <= total; d++) {
+                const dateObj = new Date(y, m, d); const iso = toYMDLocal(dateObj);
+                let cls = "day"; if (selStart && toYMDLocal(selStart) === iso) cls += " selected"; if (selEnd && toYMDLocal(selEnd) === iso) cls += " selected"; if (selStart && selEnd && dateObj > selStart && dateObj < selEnd) cls += " in-range";
+                html += `<div class="${cls}" data-date="${iso}">${d}</div>`;
+            }
+            html += `</div>`; picker.innerHTML = html;
+            picker.querySelector("#drpPrev").onclick = () => { viewDate = new Date(y, m - 1, 1); renderPicker(); };
+            picker.querySelector("#drpNext").onclick = () => { viewDate = new Date(y, m + 1, 1); renderPicker(); };
+            picker.querySelectorAll(".day[data-date]").forEach(el => {
+                el.addEventListener("click", (ev) => {
+                    ev.stopPropagation(); const d = fromYMDLocal(el.dataset.date);
+                    if (!selStart || (selStart && selEnd)) { selStart = d; selEnd = null; } else { if (d < selStart) { selStart = d; selEnd = null; } else { selEnd = d; } }
+                    if (selStart && selEnd) { startInput.value = toYMDLocal(selStart); endInput.value = toYMDLocal(selEnd); rangeInput.value = formatHumanRange(selStart, selEnd); state.start = startInput.value; state.end = endInput.value; const btnDate = document.getElementById('btn-date'); if (btnDate) btnDate.innerHTML = `Período<br>${rangeInput.value}`; closePicker(); }
+                    else { renderPicker(); }
+                });
+            });
+        }
+        rangeInput?.addEventListener("click", (e) => { e.stopPropagation(); openPicker(); });
+        document.addEventListener("click", (e) => {
+            if (!picker || picker.style.display === "none") return; const path = typeof e.composedPath() === "function" ? e.composedPath() : []; const anchor = document.getElementById('btn-date'); const clickedInside = path.includes(picker) || picker.contains(e.target) || e.target === rangeInput || e.target === anchor; if (clickedInside) return; closePicker();
+        });
+        window.addEventListener("resize", () => { if (picker && picker.style.display !== "none") openPicker(); });
+        window.addEventListener("scroll", () => { if (picker && picker.style.display !== "none") openPicker(); }, true);
+        if (startInput?.value && endInput?.value) { selStart = fromYMDLocal(startInput.value); selEnd = fromYMDLocal(endInput.value); rangeInput.value = formatHumanRange(selStart, selEnd); }
+
+        async function addFlagToImage(file, roles = ["ALL"]) { return file; }
+        async function uploadTag(file, start, end, comment, roles = ["ALL"], category = null) {
+            // category esperado como objeto {id,name}
+            const fileToUpload = await addFlagToImage(file, roles);
+            const storageReference = ref(window.storage, `tags/${Date.now()}_${fileToUpload.name}`);
+            await uploadBytes(storageReference, fileToUpload);
+            const url = await getDownloadURL(storageReference);
+            const fileName = fileToUpload.name || '';
+            const actionPayload = category ? { action: category.name, actionId: category.id } : { action: null };
+            const tagData = { imgUrl: url, fileName, start: fromYMDLocal(start), end: fromYMDLocal(end), comment, roles, ...actionPayload, createdAt: new Date() };
+            const docRef = await addDoc(collection(window.db, "tags"), tagData);
+            // Atualiza documento agregado de categorias (categories/global)
+            try { if (category && category.name) { await recomputeAndPersistCategories(); } } catch (e) { console.warn('Falha ao agregar categorias', e); }
+            return { id: docRef.id, imgUrl: url, fileName, ...actionPayload };
+        }
+
+        // --- Categoria utilidades ---
+        async function recomputeAndPersistCategories() {
+            // Reconta categorias a partir de todas as tags válidas (não expurgadas >2 dias)
+            const snap = await getDocs(collection(window.db, 'tags'));
+            const counts = {};
+            const now = Date.now();
+            snap.forEach(d => {
+                const data = d.data();
+                const act = (data.action || data.categoria || '').trim();
+                if (!act) return;
+                const end = data.end?.toDate ? data.end.toDate() : data.end;
+                if (end) {
+                    const endDate = new Date(end);
+                    const diffDays = Math.floor((now - endDate.getTime()) / 86400000);
+                    // Mantém tags até política já existente (<=2 dias após fim) - depois elas já deveriam ser removidas
+                    if (diffDays > 2) return;
+                }
+                counts[act] = (counts[act] || 0) + 1;
+            });
+            const list = Object.entries(counts).map(([name, count]) => ({ name, count }));
+            await setDoc(doc(window.db, 'categories', 'global'), { list, updatedAt: new Date() }, { merge: true });
+            await pruneEmptyCategories(counts);
+        }
+
+        async function pruneEmptyCategories(countsMap) {
+            // Remove docs em tagCategories cujo name não aparece mais e não são sticky
+            try {
+                const snap = await getDocs(collection(window.db, 'tagCategories'));
+                const deletions = [];
+                snap.forEach(d => {
+                    const data = d.data?.() || d.data();
+                    const name = (data?.name || '').trim();
+                    const sticky = !!data?.sticky;
+                    if (!sticky && name && (!countsMap[name] || countsMap[name] === 0)) {
+                        deletions.push(deleteDoc(doc(window.db, 'tagCategories', d.id)));
+                    }
+                });
+                if (deletions.length) await Promise.allSettled(deletions);
+            } catch (e) { console.warn('Falha ao podar categorias vazias', e); }
+        }
+
+        function extractFileNameFromUrl(url) {
+            try {
+                const u = new URL(url);
+                const afterO = (u.pathname.split('/o/')[1] || u.pathname);
+                const decoded = decodeURIComponent(afterO);
+                const last = decoded.substring(decoded.lastIndexOf('/') + 1);
+                return last.replace(/^\d+_/, '');
+            } catch (_) { return ''; }
+        }
+
+        async function fetchTags() {
+            const snapshot = await getDocs(collection(window.db, "tags"));
+            const results = []; const hoje = new Date();
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                const start = data.start?.toDate ? data.start.toDate() : data.start;
+                const end = data.end?.toDate ? data.end.toDate() : data.end;
+                const endDate = new Date(end); const diffDays = Math.floor((hoje - endDate) / (1000 * 60 * 60 * 24));
+                if (diffDays > 2) { deleteDoc(doc(window.db, "tags", docSnap.id)).catch(console.warn); return; }
+                const fileName = data.fileName || extractFileNameFromUrl(data.imgUrl || '') || '';
+                results.push({ id: docSnap.id, imgUrl: data.imgUrl, fileName, start, end, comment: data.comment || "", roles: data.roles || ["ALL"], deleted: data.deleted || false, deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt });
+            });
+            return results;
+        }
+
+        function renderTags() {
+            const grid = document.getElementById("tagsGrid"); if (!grid) return; grid.innerHTML = "";
+            const showOnlyScheduled = window.__showScheduledOnly === true;
+            const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+            tags.forEach((tag, index) => {
+                const tagRoles = (tag.roles || []).map(r => String(r).toUpperCase());
+                const filtroLojas = JSON.parse(localStorage.getItem("filtroLojas")) || [];
+                const noViewStoreFilter = !Array.isArray(viewFilter.stores) || viewFilter.stores.length === 0;
+                const startDate = startOfDay(tag.start);
+                if (showOnlyScheduled) {
+                    // Exibir somente futuras (start > hoje)
+                    if (!startDate || startDate <= todayMid) return;
+                } else {
+                    // Excluir futuras na listagem normal
+                    if (startDate && startDate > todayMid) return;
+                }
+                
+                // Filtro do sidebar (viewFilter.stores) - quando há lojas selecionadas, ignora "ALL"
+                if (Array.isArray(viewFilter.stores) && viewFilter.stores.length > 0) {
+                    // Só mostrar tags que tenham TODAS as lojas selecionadas (interseção)
+                    const allSelectedPresent = viewFilter.stores.every(sel => tagRoles.includes(sel));
+                    if (!allSelectedPresent) return;
+                }
+                
+                // Filtro legado do localStorage (usado por outros filtros)
+                if (noViewStoreFilter && filtroLojas.length > 0 && !(tagRoles.includes("ALL") || tagRoles.some(r => filtroLojas.includes(r)))) return;
+                
+                if (viewFilter.start || viewFilter.end) {
+                    const tStart = startOfDay(tag.start); const tEnd = endOfDay(tag.end); if (!tStart || !tEnd) return;
+                    const fStart = viewFilter.start ? startOfDay(viewFilter.start) : null; const fEnd = viewFilter.end ? endOfDay(viewFilter.end) : null;
+                    if (fStart && fEnd) { const overlap = (tStart <= fEnd) && (tEnd >= fStart); if (!overlap) return; }
+                    else if (fStart) { if (!(tStart <= endOfDay(fStart) && tEnd >= startOfDay(fStart))) return; }
+                    else if (fEnd) { if (!(tStart <= endOfDay(fEnd) && tEnd >= startOfDay(fEnd))) return; }
+                }
+                if (!matchesQuickDay(tag)) return;
+                const status = getStatus(tag.start, tag.end);
+                const imgSrc = tag.imgUrl || "placeholder.png";
+                const fileDisplay = (tag.fileName || '').trim();
+                const div = document.createElement("div"); div.className = "tag";
+                if (tag.deleted) { div.style.border = "3px solid #000000"; } else { div.style.border = `3px solid ${status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c"}`; }
+                div.innerHTML = `
+                    <input type="checkbox" class="tag-checkbox" data-index="${index}">
+                    <img src="${imgSrc}" alt="tag">
+                    ${fileDisplay ? `<div class="file-badge" title="${fileDisplay}" style="margin:6px 0 0; padding:4px 8px; background:#eef5f2; color:#0c6749; border-radius:6px; font-size:11px; font-weight:600; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><i class=\"fa fa-file-image\" style=\"margin-right:6px; opacity:.8;\"></i>${fileDisplay}</div>` : ``}
+                    <small>${formatDate(tag.start)} a ${formatDate(tag.end)}</small>
+                    <small>Lojas: ${tagRoles.includes("ALL") ? "Todas" : tagRoles.join(", ")}</small>
+                    ${tag.comment ? `<div class="comment-bubble"></div><div class="comment-text">${tag.comment}</div>` : ""}
+                    <div class="actions">
+                        <button title="Deletar" class="delete-btn" data-index="${index}"><i class="fa-solid fa-trash-can" style="color: red;"></i></button>
+                        <button title="Informações de impressão" class="info-btn" data-index="${index}"><i class="fa-solid fa-eye"></i></button>
+                    </div>`;
+                grid.appendChild(div);
+                const infoBtn = div.querySelector('.info-btn');
+                infoBtn?.addEventListener('click', () => { const t = tags[index]; if (t) openPrintedInfoModal(t); });
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async e => {
+                    const idx = Number(e.currentTarget.dataset.index); const tag = tags[idx]; if (!tag) return;
+                    showDeleteConfirmation(tag, idx);
+                });
+            });
+        }
+    // Expor render para que o sidebar possa solicitar re-renderização ao alterar filtros
+    window.renderTagsADM = renderTags;
+
+        function showDeleteConfirmation(tag, index) {
+            const modal = document.getElementById('deleteConfirmModal'); modal.style.display = 'block';
+            const confirmBtn = document.getElementById('confirmDelete'); const cancelBtn = document.getElementById('cancelDelete');
+            const newConfirmBtn = confirmBtn.cloneNode(true); const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn); cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            newConfirmBtn.addEventListener('click', async () => { modal.style.display = 'none'; try { await deleteTag(tag.id); tags.splice(index, 1); renderTags(); showSuccessModal(); } catch (err) { console.error('Erro ao remover tag:', err); alert('Erro ao remover tag. Tente novamente.'); } });
+            newCancelBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+            const outsideClickHandler = (e) => { if (e.target === modal) { modal.style.display = 'none'; modal.removeEventListener('click', outsideClickHandler); } };
+            modal.addEventListener('click', outsideClickHandler);
+        }
+
+        function showSuccessModal() {
+            const modal = document.getElementById('successModal'); modal.style.display = 'block';
+            const closeBtn = document.getElementById('closeSuccess'); const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+            const outsideClickHandler = (e) => { if (e.target === modal) { modal.style.display = 'none'; modal.removeEventListener('click', outsideClickHandler); } };
+            modal.addEventListener('click', outsideClickHandler);
+            setTimeout(() => { if (modal.style.display === 'block') { modal.style.display = 'none'; } }, 3000);
+        }
+
+        async function deleteTag(id) { await setDoc(doc(window.db, 'tags', id), { deleted: true, deletedAt: new Date() }, { merge: true }); }
+        async function renderTagsFromServer() { try { tags = await fetchTags(); renderTags(); } catch (err) { console.error('Erro ao buscar tags do Firebase:', err); } }
+        window.initADM = renderTagsFromServer;
+
+        function parseDateLocalAny(d) { if (!d) return null; if (d.toDate) return d.toDate(); const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt; }
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function formatDateTimeBR(d) { const date = parseDateLocalAny(d); if (!date) return '-'; return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)} - ${pad2(date.getHours())}:${pad2(date.getMinutes())}`; }
+        async function loadPrintedInfoForTag(tagId) {
+            const key = String(tagId); if (printedInfoCache.has(key)) return printedInfoCache.get(key);
+            try {
+                if (!window.db || !window.getDocs || !window.collection || !window.query || !window.where) return [];
+                const q = window.query(window.collection(window.db, 'printedTags'), window.where('tagId', '==', key));
+                const snap = await window.getDocs(q); const arr = []; snap.forEach(d => { const data = d.data?.() || d.data(); let roleCode = (data?.role || (typeof d.id === 'string' && d.id.includes('__') ? d.id.split('__')[0] : '') || '').toUpperCase(); const printedAt = data?.printedAt?.toDate ? data.printedAt.toDate() : (data?.printedAt || null); if (roleCode) arr.push({ role: roleCode, printedAt }); });
+                arr.sort((a, b) => { const ta = a.printedAt ? new Date(a.printedAt).getTime() : 0; const tb = b.printedAt ? new Date(b.printedAt).getTime() : 0; return tb - ta; }); printedInfoCache.set(key, arr); return arr;
+            } catch (e) { return []; }
+        }
+        async function loadAttentionForTag(tagId) { const key = String(tagId); if (attentionInfoCache.has(key)) return attentionInfoCache.get(key); try { const q = window.query(window.collection(window.db, 'attentionTags'), window.where('tagId', '==', key)); const snap = await window.getDocs(q); const set = new Set(); snap.forEach(d => { const data = d.data?.() || d.data(); const role = (data?.role || (typeof d.id === 'string' && d.id.includes('__') ? d.id.split('__')[0] : '') || '').toUpperCase(); const att = (data?.attention === undefined) ? true : !!data.attention; if (role && att) set.add(role); }); attentionInfoCache.set(key, set); return set; } catch (e) { return new Set(); } }
+        async function setAttention(tagId, roleCode, on) { const id = String(tagId); const roleLower = String(roleCode).toLowerCase(); const docId = `${roleLower}__${id}`; if (on) { await window.setDoc(window.doc(window.db, 'attentionTags', docId), { role: roleLower, tagId: id, attention: true, attentionAt: new Date() }, { merge: true }); } else { try { await window.deleteDoc(window.doc(window.db, 'attentionTags', docId)); } catch (_) { } } attentionInfoCache.delete(id); }
+        function ensurePrintedInfoModal() { let modal = document.getElementById('printedInfoModal'); if (modal) return modal; modal = document.createElement('div'); modal.id = 'printedInfoModal'; modal.className = 'modal'; modal.innerHTML = `<div class="modal-content" style="max-width:720px;"><span id="closePrintedInfo" class="close" style="cursor:pointer;">&times;</span><h2 style="margin-top:0;">Impressões da Tag</h2><div id="printedInfoContent" style="margin-top:10px; max-height:60vh; overflow:auto;"></div></div>`; document.body.appendChild(modal); document.getElementById('closePrintedInfo')?.addEventListener('click', () => { modal.style.display = 'none'; }); modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; }); return modal; }
+        async function openPrintedInfoModal(tag) { const modal = ensurePrintedInfoModal(); const content = modal.querySelector('#printedInfoContent'); content.innerHTML = '<div style="opacity:.7;">Carregando...</div>'; modal.style.display = 'block'; const [printedList, attentionSet] = await Promise.all([loadPrintedInfoForTag(tag.id), loadAttentionForTag(tag.id)]); const printedMap = new Map(printedList.map(i => [String(i.role).toUpperCase(), i])); const rows = lojas.map(code => { const role = String(code).toUpperCase(); const printed = printedMap.get(role); const att = attentionSet.has(role); const datePart = printed ? formatDateTimeBR(printed.printedAt) : '- | -'; const statusIcon = printed ? '<i class="fa-solid fa-circle-check" style="color:#27ae60"></i>' : '<i class="fa-solid fa-circle-xmark" style="color:#e74c3c"></i>'; const attBtn = printed ? '' : `<button class="att-btn" data-role="${role}" style="margin-left:10px; border:none; background:transparent; cursor:pointer;"><i class=\"fa-solid fa-circle-exclamation\" style=\"color:${att ? '#e67e22' : '#bbb'}\"></i></button>`; return `<div class=\"pi-row\" style=\"display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid #eee;\"><div style=\"display:flex; align-items:center; gap:10px;\"><strong style=\"min-width:64px;\">${role}</strong><span>${datePart}</span></div><div style=\"display:flex; align-items:center; gap:8px;\">${statusIcon}${attBtn}</div></div>`; }).join(''); content.innerHTML = rows || '<div style="opacity:.7;">Sem lojas cadastradas.</div>'; content.querySelectorAll('.att-btn')?.forEach(btn => { btn.addEventListener('click', async () => { const role = btn.getAttribute('data-role'); const isOn = attentionSet.has(role); await setAttention(tag.id, role, !isOn); const icon = btn.querySelector('i'); if (icon) icon.style.color = !isOn ? '#e67e22' : '#bbb'; if (!isOn) attentionSet.add(role); else attentionSet.delete(role); }); }); }
+
+        // -------- Modal Olho por Loja (sidebar) --------
+    const storeEyeModal = document.getElementById('storeEyeModal');
+    // Garante que está diretamente sob <body> para evitar contextos de empilhamento locais
+    if (storeEyeModal && storeEyeModal.parentElement !== document.body) {
+        try { document.body.appendChild(storeEyeModal); } catch (_) {}
+    }
+    const closeStoreEye = document.getElementById('closeStoreEye');
+    const storeEyeTitle = document.getElementById('storeEyeTitle');
+    const eyeToggle = document.getElementById('eyeToggle');
+    const storeEyeList = document.getElementById('storeEyeList');
+    // Fechar ao clicar no backdrop
+    storeEyeModal?.querySelector('.modal-backdrop')?.addEventListener('click', () => { storeEyeModal.style.display = 'none'; });
+
+        // Cache simples por loja: printed -> Map(tagId => printedAt), attention -> Set(tagId)
+        const perStorePrintedCache = new Map(); // code -> Map(tagId => printedAt)
+        const perStoreAttentionCache = new Map(); // code -> Set(tagId)
+
+        async function fetchPrintedMapForStore(codeUpper) {
+            const key = String(codeUpper).toUpperCase();
+            if (perStorePrintedCache.has(key)) return perStorePrintedCache.get(key);
+            try {
+                const q = window.query(window.collection(window.db, 'printedTags'), window.where('role', '==', key.toLowerCase()));
+                const snap = await window.getDocs(q);
+                const map = new Map();
+                snap.forEach(d => {
+                    const data = d.data?.() || d.data();
+                    const id = String(data?.tagId ?? (d.id.includes('__') ? d.id.split('__')[1] : ''));
+                    const printedAt = data?.printedAt || data?.updatedAt || null;
+                    if (id) map.set(id, printedAt);
+                });
+                perStorePrintedCache.set(key, map);
+                return map;
+            } catch (_) { return new Map(); }
+        }
+
+        async function fetchAttentionSetForStore(codeUpper) {
+            const key = String(codeUpper).toUpperCase();
+            if (perStoreAttentionCache.has(key)) return perStoreAttentionCache.get(key);
+            try {
+                const q = window.query(window.collection(window.db, 'attentionTags'), window.where('role', '==', key.toLowerCase()));
+                const snap = await window.getDocs(q);
+                const set = new Set();
+                snap.forEach(d => { const data = d.data?.() || d.data(); const id = String(data?.tagId ?? (d.id.includes('__') ? d.id.split('__')[1] : '')); if (id && (data?.attention === undefined ? true : !!data.attention)) set.add(id); });
+                perStoreAttentionCache.set(key, set);
+                return set;
+            } catch (_) { return new Set(); }
+        }
+
+        function niceFileName(t) { return (t.fileName || '').trim() || (t.imgUrl ? (t.imgUrl.split('?')[0].split('/').pop() || '') : ''); }
+
+                function renderStoreEyeList({ storeCode, showPrinted, printedMap, attentionSet }) {
+            const code = String(storeCode).toUpperCase();
+            const relevant = (tags || []).filter(t => {
+                const roles = (t.roles || []).map(r => String(r).toUpperCase());
+                return roles.includes('ALL') || roles.includes(code);
+            });
+            // Ordena por data mais recente (opcional)
+            relevant.sort((a,b) => new Date(b.start) - new Date(a.start));
+            const rows = relevant.map(t => {
+                const id = String(t.id);
+                                const printed = printedMap.has(id);
+                if (showPrinted && !printed) return '';
+                if (!showPrinted && printed) return '';
+                const fname = niceFileName(t) || `tag_${id}`;
+                                const statusCol = printed
+                                        ? `<span style="color:#27ae60; font-weight:700; display:inline-flex; align-items:center; gap:6px;"><i class='fa-solid fa-circle-check'></i> ${formatDateTimeBR ? formatDateTimeBR(printedMap.get(id)) : ''}</span>`
+                                        : `<span style="display:inline-flex; align-items:center; gap:10px;">
+                                                 <i class='fa-solid fa-circle-xmark' style='color:#e74c3c;'></i>
+                                                 <button class='att-eye-btn' data-id='${id}' title='Marcar atenção' style='border:none; background:#fff3e0; padding:4px 8px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;'>
+                                                     <i class='fa-solid fa-circle-exclamation' style='color:${attentionSet?.has(id) ? '#e67e22' : '#bbb'}'></i> Alertar
+                                                 </button>
+                                             </span>`;
+                return `<div class="eye-row" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid #e6f0ec; border-radius:8px; background:#fff;">
+                          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                            <i class="fa fa-file-image" style="color:#108e64;"></i>
+                            <div style="font-weight:600; color:#0c6749; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${fname}">${fname}</div>
+                          </div>
+                          <div>${statusCol}</div>
+                        </div>`;
+            }).filter(Boolean).join('');
+            storeEyeList.innerHTML = rows || `<div style="opacity:.7; text-align:center; padding:16px;">Nenhuma tag ${showPrinted ? 'impressa' : 'pendente'}.</div>`;
+            // Wire alert buttons
+            storeEyeList.querySelectorAll('.att-eye-btn')?.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const tid = btn.getAttribute('data-id');
+                    try {
+                                                await setAttention(tid, storeCode, true);
+                                                // Atualiza estado visual e cache
+                                                const icon = btn.querySelector('i');
+                                                if (icon) icon.style.color = '#e67e22';
+                                                const key = String(storeCode).toUpperCase();
+                                                let set = perStoreAttentionCache.get(key);
+                                                if (!set) { set = new Set(); perStoreAttentionCache.set(key, set); }
+                                                set.add(String(tid));
+                    } catch (_) { /* ignore */ }
+                });
+            });
+        }
+
+        async function openStoreEye(storeKey, storeCode) {
+            const code = String(storeCode).toUpperCase();
+            storeEyeTitle.innerHTML = `<i class="fa fa-eye"></i> ${LOJA_NAME_MAP[storeKey] || humanizeKey(storeKey)} (${code})`;
+            eyeToggle.checked = true; // default: impressas
+            storeEyeModal.style.display = 'block';
+            const [printedMap, attentionSet] = await Promise.all([
+                fetchPrintedMapForStore(code),
+                fetchAttentionSetForStore(code)
+            ]);
+            renderStoreEyeList({ storeCode: code, showPrinted: true, printedMap, attentionSet });
+            // Toggle handler
+            const rerender = () => renderStoreEyeList({ storeCode: code, showPrinted: !!eyeToggle.checked, printedMap, attentionSet });
+            eyeToggle.onchange = rerender;
+        }
+
+        window.openStoreEyeModal = openStoreEye;
+        closeStoreEye?.addEventListener('click', () => { storeEyeModal.style.display = 'none'; });
+        storeEyeModal?.addEventListener('click', (e) => { if (e.target === storeEyeModal) storeEyeModal.style.display = 'none'; });
+
+        // New Upload button & file handling
+        const imgInput = document.getElementById('img');
+        const btnUpload = document.getElementById('btn-upload');
+        if (btnUpload) {
+            btnUpload.addEventListener('click', () => imgInput?.click());
+            // drag & drop support
+            ;['dragenter', 'dragover'].forEach(evt => btnUpload.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); btnUpload.style.backgroundColor = '#e7f4ee'; }));
+            ;['dragleave', 'drop'].forEach(evt => btnUpload.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); btnUpload.style.backgroundColor = ''; }));
+            btnUpload.addEventListener('drop', (e) => {
+                const files = Array.from(e.dataTransfer?.files || []).filter(f => /^image\//.test(f.type));
+                if (files.length) { state.files = files; updateUploadButtonLabel(); }
+            });
+        }
+        function updateUploadButtonLabel() {
+            const count = state.files?.length || 0;
+            const text = count === 0 ? 'Selecione ou arraste<br>um arquivo aqui' : (count === 1 ? `${state.files[0].name}` : `${count} arquivos selecionados`);
+            const btn = document.getElementById('btn-upload'); if (btn) btn.innerHTML = text;
+        }
+        imgInput?.addEventListener('change', () => { state.files = Array.from(imgInput.files || []); updateUploadButtonLabel(); });
+
+        // Date button opens picker
+        const btnDate = document.getElementById('btn-date');
+        btnDate?.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openPicker(); });
+
+        // Comment input binds to state
+        const commentInput = document.getElementById('comment');
+        commentInput?.addEventListener('input', () => { state.comment = commentInput.value; });
+        state.comment = commentInput?.value || '';
+
+        // Cluster button and modal wiring
+        const btnCluster = document.getElementById('btn-cluster');
+        const clusterModal = document.getElementById('clusterModal');
+        const closeCluster = document.getElementById('closeCluster');
+        const clusterApply = document.getElementById('clusterApply');
+        const clusterSelectAll = document.getElementById('clusterSelectAll');
+        const clusterClear = document.getElementById('clusterClear');
+        const storeSearchCluster = document.getElementById('storeSearchCluster');
+        btnCluster?.addEventListener('click', () => { renderClusterStores(); clusterModal.style.display = 'block'; });
+        closeCluster?.addEventListener('click', () => clusterModal.style.display = 'none');
+        clusterModal?.addEventListener('click', (e) => { if (e.target === clusterModal) clusterModal.style.display = 'none'; });
+        clusterApply?.addEventListener('click', () => {
+            const selected = Array.from(document.querySelectorAll('#clusterStores .store-item.selected')).map(el => el.dataset.store);
+            state.stores = selected;
+            // persist as view filter too (optional)
+            localStorage.setItem('filtroLojas', JSON.stringify(selected));
+            const btn = document.getElementById('btn-cluster');
+            if (btn) { btn.innerHTML = selected.length ? `Cluster<br>${selected.length} loja(s)` : 'Selecionar<br>o cluster'; }
+            clusterModal.style.display = 'none';
+            renderTags(); // update view
+        });
+        clusterSelectAll?.addEventListener('click', () => {
+            const items = Array.from(document.querySelectorAll('#clusterStores .store-item')).filter(el => el.style.display !== 'none');
+            const allSelected = items.length > 0 && items.every(el => el.classList.contains('selected'));
+            items.forEach(el => el.classList.toggle('selected', !allSelected));
+            updateClusterSelectionCount();
+        });
+        clusterClear?.addEventListener('click', () => {
+            document.querySelectorAll('#clusterStores .store-item.selected').forEach(el => el.classList.remove('selected'));
+            updateClusterSelectionCount();
+        });
+        storeSearchCluster?.addEventListener('input', (e) => filterClusterStores(e.target.value));
+
+        // Categories (Ação)
+        async function loadCategories() {
+            try {
+                const snap = await getDocs(collection(window.db, 'tagCategories'));
+                const sel = document.getElementById('categorySelect');
+                if (!sel) return;
+                const current = sel.value;
+                sel.innerHTML = '<option value="" disabled>Selecione uma categoria</option>';
+                const cats = []; snap.forEach(d => { const data = d.data?.() || d.data(); if (!data) return; cats.push({ id: d.id, name: data.name, sticky: !!data.sticky }); });
+                cats.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+                cats.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name + (c.sticky ? ' (para sempre)' : ''); sel.appendChild(opt); });
+                // restore selection if possible
+                if (state.category && cats.some(c => c.id === state.category.id)) sel.value = state.category.id; else sel.selectedIndex = 0;
+            } catch (e) { console.warn('Falha ao carregar categorias', e); }
+        }
+        async function createCategory(name, sticky) {
+            const refDoc = await addDoc(collection(window.db, 'tagCategories'), { name, sticky: !!sticky, createdAt: new Date() });
+            return { id: refDoc.id, name, sticky: !!sticky };
+        }
+        const btnAction = document.getElementById('btn-action');
+        const actionModal = document.getElementById('actionModal');
+        const closeAction = document.getElementById('closeAction');
+        const openNewCategory = document.getElementById('openNewCategory');
+        const applyAction = document.getElementById('applyAction');
+        const categorySelect = document.getElementById('categorySelect');
+        btnAction?.addEventListener('click', async () => { await loadCategories(); actionModal.style.display = 'block'; });
+        closeAction?.addEventListener('click', () => actionModal.style.display = 'none');
+        actionModal?.addEventListener('click', (e) => { if (e.target === actionModal) actionModal.style.display = 'none'; });
+        categorySelect?.addEventListener('change', () => {
+            const id = categorySelect.value; const text = categorySelect.options[categorySelect.selectedIndex]?.text || '';
+            if (id) { state.category = { id, name: text.replace(/ \(para sempre\)$/, '') }; }
+        });
+
+        // New Category modal wiring
+        const newCategoryModal = document.getElementById('newCategoryModal');
+        const closeNewCategory = document.getElementById('closeNewCategory');
+        const cancelCategory = document.getElementById('cancelCategory');
+        const saveCategoryBtn = document.getElementById('saveCategory');
+        const newCategoryName = document.getElementById('newCategoryName');
+        const newCategorySticky = document.getElementById('newCategorySticky');
+        openNewCategory?.addEventListener('click', () => { newCategoryName.value = ''; newCategorySticky.checked = false; newCategoryModal.style.display = 'block'; });
+        closeNewCategory?.addEventListener('click', () => newCategoryModal.style.display = 'none');
+        cancelCategory?.addEventListener('click', () => newCategoryModal.style.display = 'none');
+        newCategoryModal?.addEventListener('click', (e) => { if (e.target === newCategoryModal) newCategoryModal.style.display = 'none'; });
+        saveCategoryBtn?.addEventListener('click', async () => {
+            const name = (newCategoryName.value || '').trim(); const sticky = !!newCategorySticky.checked;
+            if (!name) { alert('Informe um nome.'); return; }
+            try { const cat = await createCategory(name, sticky); await loadCategories(); const sel = document.getElementById('categorySelect'); if (sel) { sel.value = cat.id; state.category = cat; } newCategoryModal.style.display = 'none'; }
+            catch (e) { alert('Falha ao criar categoria.'); }
+        });
+
+        // ---- Sidebar Categorias (ADM) ----
+        async function loadAdmCategoriesList() {
+            const ul = document.getElementById('adm-categories-list');
+            if (!ul) return;
+            ul.innerHTML = '<li style="font-size:12px; opacity:.6;">Carregando...</li>';
+            try {
+                const snap = await getDocs(collection(window.db, 'tagCategories'));
+                const arr = [];
+                snap.forEach(d => { const data = d.data?.() || d.data(); if (!data) return; arr.push({ id:d.id, name:data.name, sticky:!!data.sticky }); });
+                arr.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR',{sensitivity:'base'}));
+                ul.innerHTML='';
+                arr.forEach(cat => {
+                    const li = document.createElement('li');
+                    li.style.display='flex'; li.style.alignItems='center'; li.style.justifyContent='space-between'; li.style.gap='8px';
+                    li.style.padding='8px 10px'; li.style.background='#16403c'; li.style.borderRadius='8px'; li.style.fontSize='12px'; li.style.color='#fff';
+                    li.innerHTML = `<span style="display:flex; align-items:center; gap:6px;">${cat.sticky ? '<i class=\'fa fa-thumbtack\' style=\'font-size:10px; opacity:.7;\'></i>' : ''}${cat.name}</span>` +
+                                   `${cat.sticky ? '' : '<button data-id="'+cat.id+'" title="Excluir categoria" style="background:#c0392b; border:none; color:#fff; width:28px; height:28px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class=\'fa fa-trash\'></i></button>'}`;
+                    ul.appendChild(li);
+                });
+                // Bind delete buttons
+                ul.querySelectorAll('button[data-id]')?.forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const id = btn.getAttribute('data-id');
+                        if (!confirm('Excluir categoria para todos? As tags manterão a imagem mas ficarão sem categoria.')) return;
+                        try {
+                            // Remove categoria doc
+                            await deleteDoc(doc(window.db, 'tagCategories', id));
+                            // Limpa referência em tags daquela categoria (best-effort: leitura completa para simplicidade)
+                            const all = await getDocs(collection(window.db, 'tags'));
+                            const batchUpdates = [];
+                            all.forEach(t => {
+                                const data = t.data();
+                                const act = (data.action || data.categoria || '').trim();
+                                if (act && act.toLowerCase() === (btn.parentElement.textContent || '').trim().toLowerCase()) {
+                                    batchUpdates.push(setDoc(doc(window.db,'tags', t.id), { action: null, actionId: null }, { merge:true }));
+                                }
+                            });
+                            if (batchUpdates.length) await Promise.allSettled(batchUpdates);
+                            await recomputeAndPersistCategories();
+                            loadAdmCategoriesList();
+                        } catch (e) { alert('Falha ao excluir categoria.'); }
+                    });
+                });
+            } catch (e) {
+                ul.innerHTML = '<li style="font-size:12px; opacity:.6;">Erro ao carregar.</li>';
+            }
+        }
+
+        const toggleStoresBtn = document.getElementById('toggleStores');
+        const toggleCatsBtn = document.getElementById('toggleCategories');
+        const refreshCatsBtn = document.getElementById('refreshCategories');
+        const lojasListEl = document.getElementById('lojas-list');
+        const catsPanel = document.getElementById('categoriesPanel');
+        function setSidebarMode(mode){
+            const isCats = mode==='cats';
+            if (lojasListEl) lojasListEl.style.display = isCats? 'none':'block';
+            if (catsPanel) catsPanel.style.display = isCats? 'block':'none';
+            if (toggleStoresBtn) toggleStoresBtn.style.background = isCats? '#16403c':'#0c6749';
+            if (toggleCatsBtn) toggleCatsBtn.style.background = isCats? '#0c6749':'#16403c';
+            if (isCats) loadAdmCategoriesList();
+        }
+        toggleStoresBtn?.addEventListener('click', ()=> setSidebarMode('stores'));
+        toggleCatsBtn?.addEventListener('click', ()=> setSidebarMode('cats'));
+        refreshCatsBtn?.addEventListener('click', ()=> { if (catsPanel?.style.display !== 'none') loadAdmCategoriesList(); });
+
+        // Apply action => validate and upload
+        applyAction?.addEventListener('click', async () => {
+            if (!state.files?.length) { alert('Selecione ao menos uma imagem.'); return; }
+            if (!state.start || !state.end) { alert('Selecione o período.'); return; }
+            if (!state.category) { alert('Selecione a categoria.'); return; }
+            const roles = (state.stores && state.stores.length) ? state.stores : ['ALL'];
+            const overlay = document.getElementById('loadingOverlay');
+            try {
+                if (overlay) overlay.style.display = 'flex';
+                for (const file of state.files) {
+                    const uploaded = await uploadTag(file, state.start, state.end, state.comment || '', roles, state.category);
+                    tags.unshift({ ...uploaded, start: fromYMDLocal(state.start), end: fromYMDLocal(state.end), comment: state.comment || '', roles, action: uploaded.action, actionId: uploaded.actionId });
+                }
+                renderTags();
+                // Resetar todo o estado após upload conforme solicitado
+                state.files = [];
+                state.start = null;
+                state.end = null;
+                state.stores = [];
+                state.category = null;
+                state.comment = '';
+                // Limpa UI dos botões
+                const btnAct = document.getElementById('btn-action'); if (btnAct) btnAct.innerHTML = `Selecionar<br>a ação`;
+                const btnClu = document.getElementById('btn-cluster'); if (btnClu) btnClu.innerHTML = 'Selecionar<br>o cluster';
+                const btnDate = document.getElementById('btn-date'); if (btnDate) btnDate.innerHTML = 'Selecionar<br>o período';
+                const commentInputEl = document.getElementById('comment'); if (commentInputEl) commentInputEl.value = '';
+                // Limpa inputs hidden de data
+                if (startInput) startInput.value = '';
+                if (endInput) endInput.value = '';
+                if (rangeInput) rangeInput.value = '';
+                // Limpa seleção de lojas persistida
+                localStorage.removeItem('filtroLojas');
+                updateUploadButtonLabel();
+                actionModal.style.display = 'none';
+            } catch (err) { console.error(err); alert('Erro ao enviar.'); }
+            finally { if (overlay) overlay.style.display = 'none'; }
+        });
+
+        // ---------------- Select-section (seleção e filtros) ----------------
+        // Selecionar todos
+        const selectAll = document.getElementById('selectAll');
+        selectAll?.addEventListener('change', () => {
+            document.querySelectorAll('.tag-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+        });
+
+        // Excluir selecionados
+        const deleteSelectedBtn = document.getElementById('deleteSelected');
+        deleteSelectedBtn?.addEventListener('click', async () => {
+            const selectedIndexes = Array.from(document.querySelectorAll('.tag-checkbox:checked'))
+                .map(cb => Number(cb.getAttribute('data-index')))
+                .filter(n => !Number.isNaN(n));
+            if (!selectedIndexes.length) return alert('Nenhuma tag selecionada.');
+            if (!confirm('Deseja realmente deletar as tags selecionadas?')) return;
+            for (const idx of selectedIndexes.sort((a, b) => b - a)) {
+                const tag = tags[idx]; if (!tag) continue;
+                try { await deleteTag(tag.id); } catch (e) { console.warn('Falha ao remover tag', tag?.id, e); }
+                tags.splice(idx, 1);
+            }
+            renderTags();
+        });
+
+        // Modal de filtros da listagem (opcional; só funciona se existir no HTML)
+        const openTagsFiltersBtn = document.getElementById('openFilters-tags');
+        const tagsFilterModal = document.getElementById('tagsFilterModal');
+        const closeTagsFiltersBtn = document.getElementById('closeTagsFilters');
+        const applyTagsFiltersBtn = document.getElementById('applyTagsFilters');
+        const clearTagsFiltersBtn = document.getElementById('clearTagsFilters');
+        const tagsFilterStoresDiv = document.getElementById('tagsFilterStores');
+
+        function renderTagsFilterStores() {
+            if (!tagsFilterStoresDiv) return;
+            tagsFilterStoresDiv.innerHTML = '';
+            lojas.forEach(loja => {
+                const label = document.createElement('label');
+                label.style.display = 'inline-flex';
+                label.style.alignItems = 'center';
+                label.style.gap = '6px';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = loja;
+                if (Array.isArray(viewFilter.stores) && viewFilter.stores.includes(loja)) cb.checked = true;
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(loja));
+                tagsFilterStoresDiv.appendChild(label);
+            });
+        }
+
+        function syncModalInputsFromFilter() {
+            const fs = document.getElementById('filterStart');
+            const fe = document.getElementById('filterEnd');
+            if (fs) fs.value = viewFilter.start ? toYMDLocal(new Date(viewFilter.start)) : '';
+            if (fe) fe.value = viewFilter.end ? toYMDLocal(new Date(viewFilter.end)) : '';
+            renderTagsFilterStores();
+        }
+
+        openTagsFiltersBtn?.addEventListener('click', () => {
+            syncModalInputsFromFilter();
+            if (tagsFilterModal) tagsFilterModal.style.display = 'block';
+        });
+        closeTagsFiltersBtn?.addEventListener('click', () => { if (tagsFilterModal) tagsFilterModal.style.display = 'none'; });
+        applyTagsFiltersBtn?.addEventListener('click', () => {
+            const fs = (document.getElementById('filterStart') || {}).value || '';
+            const fe = (document.getElementById('filterEnd') || {}).value || '';
+            viewFilter.start = fs ? fromYMDLocal(fs) : null;
+            viewFilter.end = fe ? fromYMDLocal(fe) : null;
+            viewFilter.stores = Array.from(document.querySelectorAll('#tagsFilterStores input:checked')).map(cb => cb.value);
+            if (tagsFilterModal) tagsFilterModal.style.display = 'none';
+            renderTags();
+        });
+        clearTagsFiltersBtn?.addEventListener('click', () => {
+            viewFilter.start = null; viewFilter.end = null; viewFilter.stores = [];
+            const fs = document.getElementById('filterStart'); const fe = document.getElementById('filterEnd');
+            if (fs) fs.value = ''; if (fe) fe.value = '';
+            document.querySelectorAll('#tagsFilterStores input[type="checkbox"]').forEach(cb => cb.checked = false);
+            if (tagsFilterModal) tagsFilterModal.style.display = 'none';
+            renderTags();
+        });
+
+        // Busca rápida por dia
+        let quickDayQuery = null;
+        const tagsQuickSearchInput = document.getElementById('tagsQuickSearch');
+        tagsQuickSearchInput?.addEventListener('input', () => {
+            quickDayQuery = parseDayQuery(tagsQuickSearchInput.value);
+            renderTags();
+        });
+        function parseDayQuery(raw) { if (!raw) return null; const s = String(raw).trim().toLowerCase(); if (!s) return null; const range = s.match(/^(\d{1,2})\s*a\s*(\d{1,2})$/i); if (range) { let d1 = parseInt(range[1], 10); let d2 = parseInt(range[2], 10); if (isNaN(d1) || isNaN(d2)) return null; if (d1 < 1 || d1 > 31 || d2 < 1 || d2 > 31) return null; if (d1 > d2) [d1, d2] = [d2, d1]; return { type: 'range', d1, d2 }; } if (/^\d{1,2}$/.test(s)) { const d = parseInt(s, 10); if (d >= 1 && d <= 31) return { type: 'single', d }; } return null; }
+        function dayOf(dateVal) { const d = parseToDate(dateVal); return d ? d.getDate() : -1; }
+        function matchesQuickDay(tag) { if (!quickDayQuery) return true; const sd = dayOf(tag.start); const ed = dayOf(tag.end); if (quickDayQuery.type === 'single') { return sd === quickDayQuery.d || ed === quickDayQuery.d; } else if (quickDayQuery.type === 'range') { const { d1, d2 } = quickDayQuery; return (sd >= d1 && sd <= d2) || (ed >= d1 && ed <= d2); } return true; }
+        // Fim select-section
+
+        // Botão para visualizar tags agendadas (futuras)
+        (function(){
+            const container = document.querySelector('.select-section');
+            if (!container) return;
+            let bar = container.querySelector('.scheduled-toggle-bar');
+            if (!bar) {
+                bar = document.createElement('div');
+                bar.className='scheduled-toggle-bar';
+                bar.style.margin='8px 0 12px';
+                bar.innerHTML = `<button id="toggleScheduled" style="background:#16403c; color:#fff; border:none; padding:10px 16px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;"><i class='fa fa-clock'></i> Tags Agendadas</button>`;
+                container.insertBefore(bar, container.firstChild);
+            }
+            const btn = bar.querySelector('#toggleScheduled');
+            function refreshState(){
+                if (window.__showScheduledOnly) { btn.style.background='#0c6749'; btn.innerHTML = `<i class='fa fa-clock'></i> Agendadas (ON)`; }
+                else { btn.style.background='#16403c'; btn.innerHTML = `<i class='fa fa-clock'></i> Tags Agendadas`; }
+            }
+            btn.addEventListener('click', ()=>{ window.__showScheduledOnly = !window.__showScheduledOnly; renderTags(); refreshState(); });
+            refreshState();
+        })();
+
+        // Inicialização: carregar tags no início
+        renderTagsFromServer();
+    </script>
+
+    <!-- Topbar active state handling -->
+    <script>
+        (function () {
+            const buttons = Array.from(document.querySelectorAll('.user-info .tags-preview'));
+            function activate(btn) { buttons.forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); }
+            const tagsBtn = buttons.find(b => /tag/i.test(b.textContent || ''));
+            activate(tagsBtn);
+            buttons.forEach(btn => btn.addEventListener('click', () => activate(btn)));
+            // Ensure content area is visible (already in DOM) and init ADM if available
+            if (window.initADM) window.initADM();
+        })();
+    </script>
+
+    <!-- Collapsible select-section behavior: FAB + outside click -->
+    <script>
+        (function () {
+            const content = document.getElementById('main-content');
+            const selectSection = document.querySelector('.select-section');
+            const fab = document.getElementById('selectFab');
+            const scrim = document.getElementById('selectScrim');
+            if (!content || !selectSection || !fab || !scrim) return;
+            let isFloatingOpen = false;
+
+            function showFab() {
+                fab.classList.add('visible');
+            }
+            function hideFab() {
+                fab.classList.remove('visible');
+            }
+
+            function openFloatingPanel() {
+                isFloatingOpen = true;
+                selectSection.classList.add('floating');
+                selectSection.classList.remove('collapsed');
+                scrim.style.display = 'block';
+                hideFab();
+            }
+            function closeFloatingPanel() {
+                isFloatingOpen = false;
+                selectSection.classList.remove('floating');
+                selectSection.classList.add('collapsed');
+                scrim.style.display = 'none';
+                showFab();
+            }
+
+            function atTop() {
+                return content.scrollTop <= 0;
+            }
+
+            function syncOnScroll() {
+                if (atTop()) {
+                    selectSection.classList.remove('collapsed');
+                    selectSection.classList.remove('floating');
+                    hideFab();
+                    scrim.style.display = 'none';
+                    isFloatingOpen = false;
+                } else {
+                    if (!isFloatingOpen) {
+                        selectSection.classList.add('collapsed');
+                        selectSection.classList.remove('floating');
+                        showFab();
+                    }
+                }
+            }
+
+            // Initial sync
+            setTimeout(syncOnScroll, 0);
+
+            // Scroll listener on the scrollable content area
+            let lastScroll = 0;
+            content.addEventListener('scroll', () => {
+                // Only trigger if scroll position changed enough to avoid flicker
+                const now = content.scrollTop;
+                if (Math.abs(now - lastScroll) > 2) {
+                    syncOnScroll();
+                    lastScroll = now;
+                }
+            }, { passive: true });
+
+            // Open from FAB
+            fab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openFloatingPanel();
+            });
+
+            // Close on scrim click or outside click
+            scrim.addEventListener('click', () => {
+                if (!atTop()) closeFloatingPanel();
+            });
+            document.addEventListener('click', (e) => {
+                if (!isFloatingOpen) return;
+                const inside = selectSection.contains(e.target) || fab.contains(e.target);
+                if (!inside && !atTop()) closeFloatingPanel();
+            }, true);
+
+            // On resize, re-sync
+            window.addEventListener('resize', syncOnScroll);
+        })();
+    </script>
+</body>
+
+</html>

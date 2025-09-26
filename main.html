@@ -9,127 +9,643 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="icon" href="/logo/LOGO USER.png" type="image/png">
-    <style>
-      /* Estilos para os modais de confirmação */
-      #removeConfirmModal, #removeSuccessModal {
-        animation: modalFadeIn 0.3s ease-out;
-      }
-      
-      @keyframes modalFadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-      
-      #removeConfirmModal button:hover,
-      #removeSuccessModal button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-      }
-      
-      #confirmRemove:hover,
-      #closeRemoveSuccess:hover {
-        background: #229954 !important;
-      }
-      
-      #cancelRemove:hover {
-        background: #7f8c8d !important;
+  <link rel="icon" href="/logo/LOGO USER.png" type="image/png">
+  <style>
+    /* === NOVO LAYOUT (referência novo-layout-adm) === */
+    :root {
+      --green: #0c6749;
+      --green-dark: #095138;
+      --bg: #121b1c;
+      --panel: #e6f0ec;
+      --radius: 14px;
+      --font: "NaruSans-Regular", system-ui, Arial, sans-serif;
+    }
+
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: var(--font);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    @font-face {
+      font-family: 'NaruSans-Bold';
+      src: url(/font/NaruSans-Bold.ttf) format('truetype');
+      font-weight: bold;
+    }
+
+    @font-face {
+      font-family: 'NaruSans-Regular';
+      src: url(/font/NaruSans-Regular.ttf) format('truetype');
+      font-weight: normal;
+    }
+
+    /* Topbar compartilhando estilo do ADM */
+    .topbar {
+      height: 72px;
+      width: 100%;
+      background: #018e5f;
+      display: flex;
+      align-items: center;
+      gap: 38px;
+      padding: 0 52px;
+      font-family: 'NaruSans-Bold', sans-serif;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .topbar .logo img {
+      height: 40px;
+      width: auto;
+      display: block;
+    }
+
+    .topbar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: 10%;
+    }
+
+    .topbar .user-info button {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: 'NaruSans-Bold', sans-serif;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 14px 44px;
+      border-radius: 0 10px 10px 10px;
+      transition: .15s;
+      position: relative;
+    }
+
+    .topbar .user-info button:hover {
+      background: #0c6749;
+    }
+
+    .topbar .user-info button.active {
+      background: #0c6749;
+    }
+
+    /* Badge sessão (loja + logout) */
+    .session-badge {
+      position: absolute;
+      right: 18px;
+      top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff10;
+      color: #fff;
+      border: 1px solid #ffffff22;
+      border-radius: 34px;
+      padding: 8px 14px;
+      font-size: 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .session-badge .id {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .session-badge .sep {
+      opacity: .4;
+    }
+
+    .session-badge .logout-btn {
+      background: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 24px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #0c6749;
+    }
+
+    .session-badge .logout-btn:hover {
+      filter: brightness(.93);
+    }
+
+    /* Barra secundária (agora filtros/status/search) */
+    /* Filtros dentro da mesma área das tags */
+    .second-header {
+      display: none;
+    }
+
+    .filter-surface {
+      background: #e6f0ec;
+      border-radius: 18px;
+      padding: 18px 28px 16px;
+      box-shadow: 0 4px 14px -4px rgba(0, 0, 0, .18);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+
+    .filter-surface.compact {
+      position: sticky;
+      top: 80px;
+    }
+
+    /* (Removido FAB de filtros neste layout) */
+    .filters-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    .filters-row>* {
+      white-space: nowrap;
+    }
+
+    .status-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .status-filters button {
+      background: #ffffff;
+      border: 1px solid #c3d3cb;
+      color: #0c6749;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .status-filters button.active {
+      background: #0c6749;
+      color: #fff;
+      border-color: #0c6749;
+    }
+
+    .status-filters button:not(.active):hover {
+      background: #f2f8f5;
+    }
+
+    .counts {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: nowrap;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .counts p {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.green {
+      background: #27ae60;
+    }
+
+    .dot.orange {
+      background: #f39c12;
+    }
+
+    .dot.red {
+      background: #e74c3c;
+    }
+
+    /* Campo busca global */
+    .global-search {
+      flex: 1;
+      position: relative;
+    }
+
+    .global-search input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #c3d3cb;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      font-family: var(--font);
+    }
+
+    .global-search input:focus {
+      outline: 2px solid #0c6749;
+    }
+
+    /* Bulk actions bar (reposicionada) */
+    #bulkActions {
+      background: #ffffff;
+      border: 1px solid #d2e2db;
+      padding: 10px 16px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    #bulkActions .bulk-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    #bulkActions .bulk-right {
+      display: flex;
+      gap: 10px;
+    }
+
+    .bulk-btn {
+      background: #fff;
+      border: 1px solid #c3d3cb;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bulk-btn.primary {
+      background: #0c6749;
+      color: #fff;
+      border-color: #0c6749;
+    }
+
+    .bulk-btn.primary:hover {
+      filter: brightness(.93);
+    }
+
+    .bulk-btn:not(.primary):hover {
+      background: #f2f8f5;
+    }
+
+    /* Layout base: sidebar + conteúdo */
+    /* App shell full height */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .main-area {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      /* para scroll interno */
+    }
+
+    nav.side-bar {
+      width: 250px;
+      background: #113330;
+      color: #fff;
+      padding: 4px 0 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .sidebar-header {
+      font-family: 'NaruSans-Bold', sans-serif;
+      padding: 0 16px 10px;
+      font-size: 22px;
+    }
+
+    .sidebar-search {
+      padding: 0 16px 14px;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      background: #16403c;
+      border: 1px solid #2c5b55;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 10px 12px;
+      font-family: var(--font);
+    }
+
+    .sidebar-search input::placeholder {
+      color: #c6d1cc;
+      opacity: .6;
+    }
+
+    ul#categories-list {
+      list-style: none;
+      margin: 0;
+      padding: 0 4px 0 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    ul#categories-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ul#categories-list::-webkit-scrollbar-thumb {
+      background: #1d4c47;
+      border-radius: 20px;
+      border: 2px solid #113330;
+    }
+
+    ul#categories-list li {
+      padding: 10px 18px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: var(--font);
+      border-radius: 8px;
+      transition: background .15s, color .15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    ul#categories-list li.active,
+    ul#categories-list li:hover {
+      background: #0c6749;
+      color: #fff;
+    }
+
+    .category-pill-count {
+      font-size: 11px;
+      background: #ffffff20;
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+
+    /* Conteúdo central */
+    main.content-wrapper {
+      flex: 1;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .content-inner {
+      flex: 1;
+      overflow: auto;
+      padding: 26px 52px 48px;
+    }
+
+    .tags-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 34px;
+    }
+
+    .tag {
+      background: #fff;
+      border: 2px solid #0c6749;
+      border-radius: 14px;
+      padding: 18px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+
+    .tag img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .tag-head {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .select-row {
+      background: #fff;
+      padding: 4px;
+      border: 2px solid #0c6749;
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tag-actions {
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+    }
+
+    .tag-actions button {
+      background: #ffffff;
+      border: 2px solid #0c6749;
+      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0c6749;
+    }
+
+    .tag-actions button:hover {
+      background: #0c6749;
+      color: #fff;
+    }
+
+    .tag small {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .4px;
+    }
+
+    .remove-btn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .remove-btn:hover {
+      filter: brightness(.92);
+    }
+
+    /* Attention indicator reuse */
+    .attention-indicator {
+      position: relative;
+    }
+
+    /* Counts + filtros container adaptável */
+    .top-interactions {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Tag status border colors override when dynamic */
+    .tag[ data-status='valid'] {
+      --br: #27ae60;
+    }
+
+    .tag[ data-status='soon'] {
+      --br: #f39c12;
+    }
+
+    .tag[ data-status='expired'] {
+      --br: #e74c3c;
+    }
+
+    /* Quando deletada força preto */
+    .tag.deleted {
+      border-color: #000 !important;
+    }
+
+    /* Modal animations (mantidos) */
+    #removeConfirmModal,
+    #removeSuccessModal {
+      animation: modalFadeIn .3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(.95);
       }
 
-      /* Estilo para o botão de retirada nas tags */
-      .remove-btn {
-        background: #e74c3c;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 12px;
-        margin-top: 10px;
-        transition: all 0.2s ease;
-        width: 100%;
+      to {
+        opacity: 1;
+        transform: scale(1);
       }
-      
-      .remove-btn:hover {
-        background: #c0392b;
-        transform: translateY(-1px);
-      }
-    </style>
+    }
+  </style>
 </head>
 
 <body>
 
-  <div class="container">
-    <!-- Header com logo, busca e login -->
-    <header class="app-header">
-      <div class="header-left">
-        <img src="logo/LOGO SM HORIZONTAL.png" alt="Supermarket" class="app-logo"/>
+  <div class="app-shell">
+    <!-- HEADER -->
+    <header class="topbar">
+      <div class="logo"><img src="/logo/PRICEBOARD LOGO.svg" alt="Logo"></div>
+      <div class="user-info" id="navButtons">
+        <button class="active" data-page="tags">Tag's</button>
+        <button data-page="pdfs">PDF's</button>
+        <button data-page="margem">Def. Margem</button>
+        <button data-page="etiquetas">Etiquetas</button>
       </div>
-      <div class="header-center">
-        <input type="text" id="search" class="search-input" placeholder="Buscar por dia (ex: 7 ou 07)" />
-      </div>
-      <div class="header-right">
-        <div class="store-info">
-          <span id="storeName">Loja</span>
-          <button type="button" id="refreshBtn" class="logout-top" style="margin-right:8px; display: flex; flex-direction: row; align-items: center; gap: 5px;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
-          <button type="button" id="logoutTop" class="logout-top">Sair</button>
-        </div>
+      <div id="sessionBadge" class="session-badge" style="display:flex;">
+        <span class="id" id="badgeUser"></span>
+        <span class="sep">•</span>
+        <span class="flag" id="badgeRole"></span>
+        <button type="button" class="logout-btn" id="logoutTop">Sair</button>
       </div>
     </header>
 
-    <div class="layout">
-      <!-- Filtros laterais -->
-      <aside class="sidebar">
-        <nav class="side-nav">
-          <button class="filter active" data-filter="all"><i class="fa-solid fa-layer-group"></i><span>Todas</span></button>
-          <button class="filter" data-filter="valid"><i class="fa-solid fa-circle-check"></i><span>Adicionar na Loja</span></button>
-          <button class="filter" data-filter="expired"><i class="fa-solid fa-box-archive"></i><span>Retirar da Loja</span></button>
-          <button class="filter" data-filter="printed"><i class="fa-solid fa-print"></i><span>Impressas</span></button>
-  
-        </nav>
-        <div class="side-divider"></div>
-      </aside>
+    <!-- FILTROS (logo abaixo da header, largura total) -->
+    <!-- (Removido container separado de filtros; agora dentro da content-inner) -->
 
-      <!-- Conteúdo principal -->
-      <section class="content">
-        <div class="counts">
-          <p><span class="dot green"></span> Válidos: <span id="countValid">0</span></p>
-          <p><span class="dot orange"></span> Logo Vence: <span id="countSoon">0</span></p>
-          <p><span class="dot red"></span> Vencidos: <span id="countExpired">0</span></p>
-          <p><b>Totais: <span id="countTotal">0</span></b></p>
-        </div>
-        <!-- Barra de ações em massa (aparece quando 2+ selecionadas) -->
-        <div id="bulkActions" class="bulk-actions" hidden>
-          <div class="bulk-left">
-            <input type="checkbox" id="selectAllVisible">
-            <label for="selectAllVisible">Selecionar visíveis</label>
-            <span class="sep">|</span>
-            <span class="sel-info"><span id="selectedCount">0</span> selecionadas</span>
-          </div>
-          <div class="bulk-right">
-            <button type="button" id="bulkDownload" class="bulk-btn">
-              <i class="fa-solid fa-print"></i> Baixar Selecionadas
-            </button>
-            <button type="button" id="bulkPrint" class="bulk-btn primary">
-              <i class="fa-solid fa-print"></i> Imprimir Selecionadas
-            </button>
-          </div>
-        </div>
+    <!-- MAIN AREA: sidebar + tags -->
+    <div class="main-area">
+      <nav class="side-bar">
+        <div class="sidebar-header">Categorias</div>
+        <div class="sidebar-search"><input id="searchCategories" type="text" placeholder="Pesquisar"></div>
+        <ul id="categories-list"></ul>
+      </nav>
+      <main class="content-wrapper">
+        <div class="content-inner">
+          <div class="filter-surface" id="filterSurface">
+            <div class="filters-row">
+              <div class="status-filters" style="flex-wrap: nowrap;" id="statusFilters">
+                <button class="status-filter active" data-status="all"><i class="fa-solid fa-layer-group"></i>
+                  Todas</button>
+                <button class="status-filter" data-status="valid"><i class="fa-solid fa-circle-check"></i> Adicionar na
+                  Loja</button>
+                <button class="status-filter" data-status="expired"><i class="fa-solid fa-box-archive"></i> Retirar da
+                  Loja</button>
+                <button class="status-filter" data-status="printed"><i class="fa-solid fa-print"></i> Impressas</button>
+              </div>
+              <div class="counts" id="countsBox">
+                <p><span class="dot green" title="Disponíveis"></span><span id="countValid">0</span></p>
+                <p><span class="dot orange" title="Logo vencem"></span><span id="countSoon">0</span></p>
+                <p><span class="dot red" title="Vencidas"></span><span id="countExpired">0</span></p>
+                <p title="Total"><strong><span id="countTotal">0</span></strong></p>
+              </div>
 
-        <main class="tags-grid" id="tagsGrid"></main>
-      </section>
+              <button id="refreshBtn"
+                style="background:#0c6749; color:#fff; border:none; padding:10px 18px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; height:42px;"><i
+                  class="fa-solid fa-rotate"></i> Atualizar</button>
+            </div>
+            <div id="bulkActions" hidden>
+              <div class="bulk-left">
+                <input type="checkbox" id="selectAllVisible">
+                <label for="selectAllVisible">Selecionar visíveis</label>
+                <span class="sep">|</span>
+                <span class="sel-info"><span id="selectedCount">0</span> selecionadas</span>
+                <div class="global-search" style="max-width:340px;">
+                  <input id="search" type="text" placeholder="Buscar / dia (ex: 7 ou 07 a 10)">
+                </div>
+              </div>
+              <div class="bulk-right">
+                <button type="button" id="bulkDownload" class="bulk-btn"><i class="fa-solid fa-circle-down"></i> Baixar
+                  Selecionadas</button>
+                <button type="button" id="bulkPrint" class="bulk-btn primary"><i class="fa-solid fa-print"></i> Imprimir
+                  Selecionadas</button>
+              </div>
+            </div>
+          </div>
+          <div class="tags-grid" id="tagsGrid"></div>
+        </div>
+      </main>
     </div>
   </div>
 
   <!-- Modal de Confirmação de Retirada -->
-  <div id="removeConfirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
-    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+  <div id="removeConfirmModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
       <div style="margin-bottom: 20px;">
         <i class="fa-solid fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
         <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Confirmar Retirada</h2>
@@ -137,10 +653,12 @@
         <p style="margin: 10px 0 0 0; font-size: 14px; color: #95a5a6;">Ela será removida da sua visualização.</p>
       </div>
       <div style="display: flex; gap: 10px; justify-content: center;">
-        <button id="cancelRemove" style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
+        <button id="cancelRemove"
+          style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
           <i class="fa-solid fa-xmark"></i> Cancelar
         </button>
-        <button id="confirmRemove" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
+        <button id="confirmRemove"
+          style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
           <i class="fa-solid fa-check"></i> Sim, Retirei
         </button>
       </div>
@@ -148,14 +666,17 @@
   </div>
 
   <!-- Modal de Sucesso da Retirada -->
-  <div id="removeSuccessModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
-    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 350px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+  <div id="removeSuccessModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 10px; max-width: 350px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
       <div style="margin-bottom: 20px;">
         <i class="fa-solid fa-thumbs-up" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
         <h2 style="margin: 0 0 10px 0; color: #2c3e50;">Tag Retirada!</h2>
         <p style="margin: 0; color: #7f8c8d;">A tag foi marcada como retirada com sucesso.</p>
       </div>
-      <button id="closeRemoveSuccess" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
+      <button id="closeRemoveSuccess"
+        style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s ease;">
         <i class="fa-solid fa-check"></i> OK
       </button>
     </div>
@@ -183,7 +704,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     // Habilita persistência offline (cache IndexedDB); ignora erro em multi-aba
-    try { enableIndexedDbPersistence(db).catch(() => {}); } catch (_) {}
+    try { enableIndexedDbPersistence(db).catch(() => { }); } catch (_) { }
     window.db = db;
     window.collection = collection;
     window.getDocs = getDocs;
@@ -255,6 +776,10 @@
     let printedSet = new Set(); // ids impressos para a loja (role) atual
     let attentionSet = new Set(); // ids marcados com atenção para a loja (role) atual
     const selectedTags = new Set(); // ids selecionados
+    // Novo: categorias (ações) derivadas das tags para minimizar leituras
+    let categories = []; // { name, count }
+    let currentCategory = 'all';
+    let currentStatusFilter = 'all';
 
     // Mapa de role (slug) -> código de loja usado nas tags (conforme padrão do ADM)
     // Adapte conforme necessário se surgirem novas lojas/códigos
@@ -332,9 +857,9 @@
     }
 
     // Utilidades de data para filtros de consulta
-    function startOfToday() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+    function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
     function daysAgo(n) { const d = startOfToday(); d.setDate(d.getDate() - n); return d; }
-    function startOfMonth() { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; }
+    function startOfMonth() { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d; }
 
     async function fetchTags() {
       if (!window.db || !window.getDocs || !window.collection) {
@@ -376,7 +901,8 @@
             roles: data.roles || ["ALL"],
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             deleted: !!data.deleted,
-            deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt
+            deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt,
+            action: data.action || data.categoria || ''
           });
         });
         if (arr.length > 0) return arr;
@@ -412,7 +938,8 @@
           roles: data.roles || ["ALL"],
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
           deleted: !!data.deleted,
-          deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt
+          deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : data.deletedAt,
+          action: data.action || data.categoria || ''
         });
       });
       return results;
@@ -517,7 +1044,7 @@
     async function ensureJSZip() {
       if (window.JSZip) return window.JSZip;
       if (window._loadJSZip) {
-        try { await window._loadJSZip(); if (window.JSZip) return window.JSZip; } catch (_) {}
+        try { await window._loadJSZip(); if (window.JSZip) return window.JSZip; } catch (_) { }
       }
       // fallback: aguarda script externo carregar
       if (window.JSZip) return window.JSZip;
@@ -547,14 +1074,24 @@
 
 
 
-    function renderTags(filter = "all", tagsList = tags) {
+    function renderTags(filter = currentStatusFilter, tagsList = tags) {
+      currentStatusFilter = filter; // persist
       const grid = document.getElementById("tagsGrid");
       grid.innerHTML = "";
       let countValid = 0, countSoon = 0, countExpired = 0;
-  const userRole = role?.toLowerCase(); // corrigido: usar a role da sessão
-  const roleOptsLow = new Set(resolveRoleOptions(role).map(v => String(v).toLowerCase()));
+      const userRole = role?.toLowerCase(); // corrigido: usar a role da sessão
+      const roleOptsLow = new Set(resolveRoleOptions(role).map(v => String(v).toLowerCase()));
 
+      const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0);
       tagsList.forEach(tag => {
+        // Ocultar tags com início no futuro (ainda não em vigor)
+        const tagStart = parseDateLocal(tag.start);
+        if (tagStart && tagStart > todayMid) return;
+        // Filtro por categoria (action)
+        if (currentCategory !== 'all') {
+          const act = (tag.action || '').toString().toLowerCase();
+          if (act !== currentCategory.toLowerCase()) return;
+        }
         const status = getStatus(tag.start, tag.end);
         const isPrinted = printedSet?.has(String(tag.id));
         const isDeleted = tag.deleted || false;
@@ -578,9 +1115,9 @@
           if (filter !== "all" && status !== filter) return;
         }
 
-  const tagRoles = (tag.roles || []).map(r => String(r).toLowerCase());
-  const matchThisStore = tagRoles.some(tr => roleOptsLow.has(tr));
-  if (!matchThisStore) return;
+        const tagRoles = (tag.roles || []).map(r => String(r).toLowerCase());
+        const matchThisStore = tagRoles.some(tr => roleOptsLow.has(tr));
+        if (!matchThisStore) return;
 
         // Contagem apenas para tags não deletadas
         if (!isDeleted) {
@@ -591,19 +1128,21 @@
 
         const div = document.createElement("div");
         div.className = "tag";
-        
+        div.dataset.status = status;
+        if (isDeleted) div.classList.add('deleted');
+
         // Define a cor da borda: preto para deletadas, cores normais para as outras
         if (isDeleted) {
           div.style.borderColor = "#000000";
         } else {
           div.style.borderColor = status === "valid" ? "#27ae60" : status === "soon" ? "#f39c12" : "#e74c3c";
         }
-        
+
         if (!div.style.position) div.style.position = 'relative';
-        
+
         // Verifica se deve mostrar botão de retirada (tags vencidas ou deletadas)
         const shouldShowRemoveBtn = (status === 'expired' || isDeleted) && filter === 'expired';
-        
+
         div.innerHTML = `
                     <div class="tag-head">
                       <label class="select-row">
@@ -869,7 +1408,7 @@
     }
 
     // -------- Fallback eficiente por IDs visíveis (sem varrer coleção inteira) --------
-    function chunk(arr, size) { const out = []; for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i+size)); return out; }
+    function chunk(arr, size) { const out = []; for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size)); return out; }
     async function fetchSetByTagIds(col, ids) {
       if (!ids || !ids.length) return new Set();
       const r = role?.toLowerCase();
@@ -928,6 +1467,22 @@
             ]);
             printedSet = pSet; attentionSet = aSet; removedTagsSet = rSet;
           }
+          // Atualiza categorias em tempo real após reload
+          try {
+            const catRef = window.doc(window.db, 'categories', 'global');
+            const catSnap = await window.getDoc(catRef);
+            if (catSnap.exists()) {
+              const data = catSnap.data();
+              if (Array.isArray(data.list)) {
+                // Recalcula contagens com base nas tags visíveis para a loja
+                const mapCounts = new Map();
+                (tags || []).forEach(t => { const a = (t.action || t.categoria || '').trim(); if (!a) return; mapCounts.set(a, (mapCounts.get(a) || 0) + 1); });
+                categories = data.list.filter(x => x && x.name).map(x => ({ name: x.name, count: (mapCounts.get(x.name) ?? (x.count || 0)) }));
+              } else { buildCategories(); }
+            } else { buildCategories(); }
+            // Re-render lista lateral se já montada
+            buildCategories();
+          } catch (_) { buildCategories(); }
           reRenderKeepingFilter();
           lastReloadAt = Date.now();
         } catch (err) {
@@ -944,16 +1499,16 @@
     function showRemoveConfirmation(tagId) {
       const modal = document.getElementById('removeConfirmModal');
       modal.style.display = 'flex';
-      
+
       const confirmBtn = document.getElementById('confirmRemove');
       const cancelBtn = document.getElementById('cancelRemove');
-      
+
       // Remove listeners anteriores
       const newConfirmBtn = confirmBtn.cloneNode(true);
       const newCancelBtn = cancelBtn.cloneNode(true);
       confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
       cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-      
+
       // Adiciona novos listeners
       newConfirmBtn.addEventListener('click', async () => {
         modal.style.display = 'none';
@@ -971,11 +1526,11 @@
           }
         }
       });
-      
+
       newCancelBtn.addEventListener('click', () => {
         modal.style.display = 'none';
       });
-      
+
       // Fechar ao clicar fora do modal
       const outsideClickHandler = (e) => {
         if (e.target === modal) {
@@ -990,17 +1545,17 @@
     function showRemoveSuccessModal() {
       const modal = document.getElementById('removeSuccessModal');
       modal.style.display = 'flex';
-      
+
       const closeBtn = document.getElementById('closeRemoveSuccess');
-      
+
       // Remove listener anterior se existir
       const newCloseBtn = closeBtn.cloneNode(true);
       closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-      
+
       newCloseBtn.addEventListener('click', () => {
         modal.style.display = 'none';
       });
-      
+
       // Fechar ao clicar fora do modal
       const outsideClickHandler = (e) => {
         if (e.target === modal) {
@@ -1009,7 +1564,7 @@
         }
       };
       modal.addEventListener('click', outsideClickHandler);
-      
+
       // Auto-fechar após 3 segundos
       setTimeout(() => {
         if (modal.style.display === 'flex') {
@@ -1081,27 +1636,27 @@
         btn.querySelector('.del-dot')?.remove();
         const r = role?.toLowerCase();
         if (!Array.isArray(tags)) return;
-        
+
         // Verifica se há tags que deveriam aparecer em "Retirar da Loja" e não foram retiradas
         const hasTagsToRemove = tags.some(t => {
           const status = getStatus(t.start, t.end);
           const isDeleted = t.deleted || false;
           const isRemoved = removedTagsSet?.has(String(t.id));
-          
+
           // Se já foi retirada, não conta
           if (isRemoved) return false;
-          
+
           // Verifica se é uma tag que deveria estar em "Retirar da Loja"
           const shouldBeInExpired = isDeleted || status === 'expired';
           if (!shouldBeInExpired) return false;
-          
+
           // Verifica se é para esta loja
           const tagRoles = (t.roles || []).map(x => String(x).toLowerCase());
           if (!tagRoles.includes('all') && !tagRoles.includes(r)) return false;
-          
+
           return true;
         });
-        
+
         if (hasTagsToRemove) {
           const dot = document.createElement('span');
           dot.className = 'del-dot';
@@ -1121,12 +1676,151 @@
       } catch (_) { /* silencioso */ }
     }
 
+    function buildCategories() {
+      const map = new Map();
+      (tags || []).forEach(t => {
+        const act = (t.action || '').trim();
+        if (!act) return; // ignora vazias
+        map.set(act, (map.get(act) || 0) + 1);
+      });
+      categories = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([name, count]) => ({ name, count }));
+      const ul = document.getElementById('categories-list');
+      if (!ul) return;
+      ul.innerHTML = '';
+      const addItem = (name, count, key) => {
+        const li = document.createElement('li');
+        li.textContent = name;
+        if (count !== null) {
+          const span = document.createElement('span');
+          span.className = 'category-pill-count';
+          span.textContent = count;
+          li.appendChild(span);
+        }
+        li.dataset.cat = key;
+        if (key === currentCategory) li.classList.add('active');
+        li.addEventListener('click', () => {
+          currentCategory = key;
+          ul.querySelectorAll('li').forEach(n => n.classList.remove('active'));
+          li.classList.add('active');
+          reRenderKeepingFilter();
+        });
+        ul.appendChild(li);
+      };
+      addItem('Todas', tags.length, 'all');
+      categories.forEach(cat => addItem(cat.name, cat.count, cat.name));
+      // Após montar, marcar categorias completas (todas tags impressas para a loja atual)
+      try {
+        const printed = printedSet || new Set();
+        const r = (role || '').toString();
+        const byCategory = new Map();
+        (tags || []).forEach(t => { const act = (t.action || '').trim(); if (!act) return; if (!byCategory.has(act)) byCategory.set(act, []); byCategory.get(act).push(t); });
+        ul.querySelectorAll('li[data-cat]').forEach(li => {
+          const key = li.dataset.cat;
+          if (key === 'all') return;
+          const list = byCategory.get(key) || [];
+          if (!list.length) return;
+          const allPrinted = list.every(t => printed.has(String(t.id)));
+          if (allPrinted) {
+            const icon = document.createElement('i');
+            icon.className = 'fa fa-circle-check';
+            icon.style.color = '#27ae60';
+            icon.style.marginLeft = '6px';
+            icon.style.fontSize = '14px';
+            li.appendChild(icon);
+            li.title = 'Todas as tags desta categoria já foram impressas para esta loja';
+          }
+        });
+      } catch (_) { }
+    }
+
+    function setupFilterCollapse() {
+      const surface = document.getElementById('filterSurface');
+      const fab = document.getElementById('filtersFab');
+      if (!surface || !fab) return;
+      let collapsed = false;
+      let lastScrollY = window.scrollY;
+      const threshold = 260; // deslocamento antes de colapsar
+      function applyState() {
+        if (collapsed) {
+          surface.style.display = 'none';
+          fab.classList.add('visible');
+        } else {
+          surface.style.display = '';
+          fab.classList.remove('visible');
+        }
+      }
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        if (!collapsed && y > threshold) { collapsed = true; applyState(); }
+        else if (collapsed && y < threshold * 0.6) { collapsed = false; applyState(); }
+        lastScrollY = y;
+      }, { passive: true });
+      fab.addEventListener('click', () => { collapsed = false; applyState(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    }
+
+    function setupCategorySearch() {
+      const input = document.getElementById('searchCategories');
+      if (!input) return;
+      input.addEventListener('input', () => {
+        const term = input.value.trim().toLowerCase();
+        const ul = document.getElementById('categories-list');
+        ul.querySelectorAll('li').forEach(li => {
+          if (li.dataset.cat === 'all') return; // sempre mostra 'Todas'
+          const text = li.textContent.toLowerCase();
+          li.style.display = text.includes(term) ? '' : 'none';
+        });
+      });
+    }
+
+    function wireStatusFilters() {
+      document.querySelectorAll('.status-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.status-filter').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentStatusFilter = btn.dataset.status || 'all';
+          renderTags(currentStatusFilter);
+        });
+      });
+    }
+
     async function init() {
       try {
         await reloadAll();
       } catch (err) {
         console.error('Falha ao carregar tags inicialmente:', err);
       }
+      // Tenta usar documento agregado de categorias (1 leitura). Espera doc: categories/global { list: [{name,count}] }
+      try {
+        const catRef = window.doc(window.db, 'categories', 'global');
+        const catSnap = await window.getDoc(catRef);
+        if (catSnap.exists()) {
+          const data = catSnap.data();
+          if (Array.isArray(data.list)) {
+            categories = data.list.filter(x => x && x.name).map(x => ({ name: x.name, count: x.count || 0 }));
+            // Ajusta contagens com base nas tags já filtradas para a loja (sincroniza caso divergente)
+            const mapCounts = new Map();
+            (tags || []).forEach(t => { const a = (t.action || '').trim(); if (!a) return; mapCounts.set(a, (mapCounts.get(a) || 0) + 1); });
+            categories = categories.map(c => ({ name: c.name, count: mapCounts.get(c.name) ?? c.count }));
+          } else {
+            buildCategories();
+          }
+        } else {
+          buildCategories();
+        }
+      } catch (_) { buildCategories(); }
+      setupCategorySearch();
+      wireStatusFilters();
+
+      // Preenche badge com role
+      try {
+        const bUser = document.getElementById('badgeUser');
+        const bRole = document.getElementById('badgeRole');
+        if (bUser) bUser.textContent = (user || role || '').toString();
+        if (bRole) bRole.textContent = (role || '').toString();
+      } catch (_) { }
+
+      // Lógica de colapso do filtro -> FAB
+      setupFilterCollapse();
 
       // Selecionar visíveis (toggle)
       document.getElementById('selectAllVisible')?.addEventListener('change', (e) => {
@@ -1310,7 +2004,7 @@
 
           for (let gi = 0; gi < groups.length; gi++) {
             const part = groups[gi];
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Gerando lote ${gi+1}/${groups.length}...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Gerando lote ${gi + 1}/${groups.length}...`;
             let pdf = null;
             let pagesAdded = 0;
             for (let i = 0; i < part.length; i++) {
@@ -1354,7 +2048,7 @@
               // Usa arraybuffer para reduzir riscos de estouro de string
               const ab = pdf.output('arraybuffer');
               const blob = new Blob([ab], { type: 'application/pdf' });
-              const fname = groups.length > 1 ? `tags_selecionadas_parte_${String(gi+1).padStart(2,'0')}.pdf` : 'tags_selecionadas.pdf';
+              const fname = groups.length > 1 ? `tags_selecionadas_parte_${String(gi + 1).padStart(2, '0')}.pdf` : 'tags_selecionadas.pdf';
               downloadBlob(blob, fname);
             }
           }
@@ -1424,27 +2118,7 @@
       renderTags(activeFilter);
     }
 
-    // Filtros
-    document.querySelectorAll('.filter').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        // Só chama renderTags direto quando o botão possui data-filter (all/valid/expired)
-        if (btn.dataset && typeof btn.dataset.filter !== 'undefined') {
-          renderTags(btn.dataset.filter);
-        }
-      });
-    });
-    document.getElementById("Recentes")?.addEventListener("click", () => {
-      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-      const hojeTags = tags.filter(tag => {
-        const created = parseDateLocal(tag.createdAt);
-        if (!created) return false;
-        created.setHours(0, 0, 0, 0);
-        return created.getTime() === hoje.getTime();
-      });
-      renderTags("all", hojeTags.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-    });
+    // (Removidos filtros laterais antigos)
 
     const searchInput = document.getElementById("search");
     function dayMatches(tag, day) {
@@ -1488,17 +2162,17 @@
       renderTags("all", filtered);
     });
 
-function imprimirTags() {
-  // Lógica para imprimir todas as tags, exceto as vencidas
-  const todasTags = document.querySelectorAll('.tag'); // Supondo que as tags tenham a classe 'tag'
-  const tagsVencidas = [...todasTags].filter(tag => !tag.classList.contains('vencida')); // Filtra as tags vencidas
+    function imprimirTags() {
+      // Lógica para imprimir todas as tags, exceto as vencidas
+      const todasTags = document.querySelectorAll('.tag'); // Supondo que as tags tenham a classe 'tag'
+      const tagsVencidas = [...todasTags].filter(tag => !tag.classList.contains('vencida')); // Filtra as tags vencidas
 
-  if (tagsVencidas.length > 0) {
-    // Lógica para imprimir as tags
-    // ...código de impressão...
+      if (tagsVencidas.length > 0) {
+        // Lógica para imprimir as tags
+        // ...código de impressão...
 
-  }
-}
+      }
+    }
   </script>
 </body>
 

@@ -2,7 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: poppins, sans-serif;
+    font-family: 'NaruSans-Regular', sans-serif;
 }
 
 body {
@@ -10,6 +10,587 @@ body {
     display: flex;
     justify-content: center;
     padding: 20px;
+    height: 100%;
+}
+
+:root {
+    --topbar-h: 64px;
+    --secondbar-h: 96px;
+    --sidebar-w: 280px;
+}
+
+@font-face {
+    font-family: 'NaruSans-Bold';
+    src: url(/font/NaruSans-Bold.ttf) format('truetype');
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: 'NaruSans-Regular';
+    src: url(/font/NaruSans-Regular.ttf) format('truetype');
+    font-weight: normal;
+}
+
+.topbar {
+    background-color: #108e64;
+    display: grid;
+    /* center nav independent of logo width */
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 12px 16px;
+    height: var(--topbar-h);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.topbar .logo {
+    justify-self: start;
+}
+
+.topbar .logo img {
+    width: 190px;
+    position: relative;
+    margin: 0;
+}
+
+.user-info {
+    align-content: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-self: center;
+    /* center the buttons block */
+    position: relative;
+    bottom: 7px;
+}
+
+.user-info button {
+    background-color: #108e64;
+    padding: 12px 30px;
+    color: white;
+    border: none;
+    margin-left: 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'NaruSans-Bold', sans-serif;
+    font-size: 18px;
+}
+
+.user-info button:active {
+    background-color: #0c6749;
+    padding: 12px 30px;
+    border-radius: 0px 10px 10px 10px;
+}
+
+/* sticky selected state */
+.user-info button.active {
+    background-color: #0c6749;
+    border-radius: 0px 10px 10px 10px;
+}
+
+/* session badge (user + role + logout) on the right of the topbar */
+.topbar .session-badge {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 14px;
+}
+
+.topbar .session-badge .id {
+    font-family: 'NaruSans-Bold', sans-serif;
+}
+
+.topbar .session-badge .flag {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.topbar .session-badge .sep {
+    opacity: 0.7;
+}
+
+.topbar .session-badge .logout-btn {
+    background: rgba(0, 0, 0, 0.18);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'NaruSans-Bold', sans-serif;
+    font-size: 12px;
+}
+
+.topbar .session-badge .logout-btn:hover {
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.second-header {
+    background-color: white;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    /* title + actions row */
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    height: var(--secondbar-h);
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    right: 0;
+    z-index: 9;
+}
+
+:root {
+    --action-height: 56px;
+}
+
+.actions-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+}
+
+.action-button {
+    width: 100%;
+    height: var(--action-height);
+    background-color: #108e64;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 12px;
+    border-radius: 10px;
+}
+
+.btn-upload {
+    width: 100%;
+    height: var(--action-height);
+    border: 2px dashed #108e64;
+    border-radius: 10px;
+    background-color: #f3faf7;
+    color: #108e64;
+    cursor: pointer;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 12px;
+}
+
+.comentario input {
+    border: none;
+    background-color: rgb(221, 221, 221);
+    border-radius: 10px;
+    padding: 5px 10px;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 12px;
+    width: 200px;
+    /* default; overridden in actions row */
+    height: 40px;
+    /* default; overridden in actions row */
+}
+
+.actions-row .comentario input {
+    width: 100%;
+    height: var(--action-height);
+    background-color: #c8d4cf;
+}
+
+/* --- Selecionar Cluster Modal: visual feedback de seleção --- */
+.store-item {
+    background: #eef5f2;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid #c8d4cf;
+    transition: background 0.18s, border 0.18s, color 0.18s;
+}
+
+.store-item.selected {
+    background-color: #108e64;
+    color: #fff;
+    border: 2px solid #108e64;
+    box-shadow: 0 2px 8px rgba(16, 142, 100, 0.10);
+}
+
+.store-item.selected .store-code {
+    color: #fff;
+}
+
+/* Botões do modal Selecionar Cluster/Ação */
+.btn-primary,
+.action-button,
+.btn-filter-tags,
+#btn-cluster,
+#btn-action {
+    background-color: #108e64;
+    color: #fff;
+    border: none;
+    border-radius: 0 10px 10px 10px;
+    font-size: 12px;
+    padding: 12px 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(16, 142, 100, 0.08);
+    transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+    outline: none;
+}
+
+.btn-primary:hover,
+.action-button:hover,
+.btn-filter-tags:hover,
+#btn-cluster:hover,
+#btn-action:hover {
+    background-color: #108e64;
+    box-shadow: 0 4px 16px rgba(16, 142, 100, 0.16);
+    transform: translateY(-2px) scale(1.03);
+}
+
+.btn-primary:active,
+.action-button:active,
+.btn-filter-tags:active,
+#btn-cluster:active,
+#btn-action:active {
+    background: #0c6749;
+    box-shadow: none;
+}
+
+/* --- select-section centralizado e fixo --- */
+.select-section {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--secondbar-h) + 8px);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(16, 142, 100, 0.07);
+    margin: 0 auto 18px auto;
+    max-width: 1000px;
+    padding: 30px 18px;
+    top: 0;
+
+    /* Animation for smooth fade/slide */
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.28s cubic-bezier(.4, 0, .2, 1), transform 0.32s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Collapsed state: hidden from flow when turning into FAB */
+.select-section.collapsed {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-16px);
+    transition: opacity 0.22s cubic-bezier(.4, 0, .2, 1), transform 0.22s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Floating panel when opened from FAB */
+.select-section.floating {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--secondbar-h) + 12px);
+    left: 50%;
+    transform: translateX(-50%) scale(1.04);
+    z-index: 1200;
+    opacity: 1;
+    pointer-events: auto;
+    height: auto;
+    margin: 0 auto;
+    padding: 20px 18px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    transition: opacity 0.28s cubic-bezier(.4, 0, .2, 1), transform 0.32s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Scrim behind floating panel */
+.select-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 1090;
+    display: none;
+}
+
+/* Floating Action Button (FAB) */
+.select-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #108e64;
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    z-index: 1150;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+    transition: opacity 0.22s cubic-bezier(.4, 0, .2, 1), transform 0.22s cubic-bezier(.4, 0, .2, 1);
+}
+
+.select-fab.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.select-fab:hover {
+    filter: brightness(0.95);
+}
+
+.select-fab i {
+    font-size: 22px;
+}
+
+.select-section label {
+    font-family: 'NaruSans-Bold', sans-serif;
+    font-size: 15px;
+    color: #108e64;
+    margin-right: 6px;
+}
+
+.select-section input[type="checkbox"] {
+    accent-color: #108e64;
+    width: 18px;
+    height: 18px;
+}
+
+.select-section input[type="text"] {
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid #6b8c74;
+    padding: 0 15px;
+}
+
+.select-section .btn-filter-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    padding: 10px 18px;
+}
+
+/* Fade out degradee para as tags ao rolar */
+
+
+#comment::placeholder {
+    color: #2a3b35;
+    opacity: 1;
+}
+
+#search-lojas::placeholder {
+    color: #ffffff;
+    opacity: 1;
+}
+
+.side-bar {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--secondbar-h));
+    left: 0;
+    width: var(--sidebar-w);
+    height: calc(100vh - (var(--topbar-h) + var(--secondbar-h)));
+    background: #108e64;
+    /* requested background */
+    border-radius: 0 12px 12px 0;
+    /* rounded corners */
+    padding: 12px 16px;
+    overflow-y: auto;
+    /* own scroll */
+    z-index: 8;
+    scrollbar-width: thin;
+    /* Firefox */
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+/* Minimal custom scrollbar (Chromium/WebKit) */
+.side-bar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.side-bar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.side-bar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    /* rounded "bolinha" */
+    border: 2px solid transparent;
+    background-clip: content-box;
+
+}
+
+.side-bar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Central scrollable content area */
+.content {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--secondbar-h));
+    left: var(--sidebar-w);
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+    /* its own scroll separate from sidebar */
+    padding: 16px;
+}
+
+/* Minimal custom scrollbar for central content */
+.content {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-header {
+    color: #e8f5f0;
+    font-family: 'NaruSans-Bold', sans-serif;
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.sidebar-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.sidebar-search input[type="text"] {
+    width: 100%;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: #0c6749;
+    padding: 6px 10px;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 12px;
+    outline: none;
+    color: rgb(255, 255, 255);
+}
+
+#lojas-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+#lojas-list li {
+    color: #e8f5f0;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: background-color 0.15s ease-in-out;
+    cursor: default;
+}
+
+#lojas-list li:hover {
+    background: #0c6749;
+}
+
+/* Estilos para controles do sidebar */
+.sidebar-controls {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.select-all-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: #108e64;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.select-all-btn:hover {
+    background-color: #0c6749;
+}
+
+.select-all-btn.all-selected {
+    background-color: #0c6749;
+}
+
+/* Estilos para lojas com checkboxes - Override dos estilos existentes */
+#lojas-list li {
+    display: block;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-family: 'NaruSans-Regular', sans-serif;
+    font-size: 13px;
+    border-radius: 8px;
+    transition: background-color 0.15s ease-in-out;
+    background: transparent;
+    margin-bottom: 2px;
+}
+
+#lojas-list li.selected {
+    background: #0c6749;
+    color: white;
+}
+
+#lojas-list li:hover {
+    background: #0c6749;
+    color: white;
+}
+
+#lojas-list li input[type="checkbox"] {
+    display: none;
+}
+
+#lojas-list li label {
+    display: block;
+    width: 100%;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* Tags area keep page background (no white panel) */
+.tags-grid {
+    background: transparent;
 }
 
 .container {
